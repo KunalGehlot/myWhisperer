@@ -6,7 +6,6 @@ import {
   app,
   BrowserWindow,
   ipcMain,
-  globalShortcut,
   session,
   systemPreferences,
 } from 'electron';
@@ -16,13 +15,15 @@ import { SettingsStore, AppSettings } from './settings-store';
 import { WhisperService } from './whisper-service';
 import { GPTService } from './gpt-service';
 import { copyToClipboard, pasteToActiveApp } from './clipboard-manager';
+import { getActiveContext } from './context-detector';
+import { ShortcutManager } from './shortcut-manager';
 import { TrayManager } from './tray-manager';
 
 let mainWindow: BrowserWindow | null = null;
 let trayManager: TrayManager | null = null;
 let isQuitting = false;
 let isRecording = false;
-let currentRegisteredShortcut: string | null = null;
+let shortcutManager: ShortcutManager | null = null;
 
 const settingsStore = new SettingsStore();
 const whisperService = new WhisperService();
@@ -44,16 +45,19 @@ const ALLOWED_SETTINGS_KEYS: ReadonlySet<keyof AppSettings> = new Set([
   'audioInputDevice',
   'personalDictionary',
   'formatPrompt',
+  'gptFormattingLevel',
 ]);
 
 /** Creates the main application window with security-hardened web preferences. */
 function createWindow(): void {
+  const isMac = process.platform === 'darwin';
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
-    frame: false,
     resizable: true,
-    titleBarStyle: 'hidden',
+    ...(isMac
+      ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 16, y: 13 } }
+      : {}),
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload', 'preload.js'),
       contextIsolation: true,
@@ -100,6 +104,10 @@ function registerIpcHandlers(): void {
       language: settings.language,
     });
 
+    // Detect active window context for context-aware formatting
+    const appContext = getActiveContext();
+
+    const formattingLevel = settings.gptFormattingLevel ?? 70;
     let formattedText = transcription.text;
     try {
       formattedText = await gptService.formatText(transcription.text, {
@@ -107,6 +115,8 @@ function registerIpcHandlers(): void {
         model: settings.gptModel,
         personalDictionary: settings.personalDictionary,
         formatPrompt: settings.formatPrompt,
+        formattingLevel,
+        appContext,
       });
     } catch (err) {
       console.error('GPT formatting failed, using raw text:', err);
@@ -151,12 +161,20 @@ function registerIpcHandlers(): void {
       }
     }
 
+    // Validate gptFormattingLevel range
+    if (typeof sanitized.gptFormattingLevel === 'number') {
+      sanitized.gptFormattingLevel = Math.max(0, Math.min(100, Math.round(sanitized.gptFormattingLevel)));
+    }
+
     const oldSettings = settingsStore.get();
     settingsStore.save(sanitized);
     const newSettings = settingsStore.get();
 
-    if (oldSettings.hotkey !== newSettings.hotkey) {
-      registerGlobalShortcut(newSettings.hotkey);
+    if (
+      oldSettings.hotkey !== newSettings.hotkey ||
+      oldSettings.recordingMode !== newSettings.recordingMode
+    ) {
+      registerShortcut(newSettings);
     }
 
     mainWindow?.webContents.send('settings:changed', newSettings);
@@ -183,7 +201,20 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle('models:get', () => {
-    return ['gpt-4', 'gpt-4-turbo', 'gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'];
+    return [
+      'gpt-4.1',
+      'gpt-4.1-mini',
+      'gpt-4.1-nano',
+      'gpt-4o',
+      'gpt-4o-mini',
+      'o4-mini',
+      'o3',
+      'o3-mini',
+      'o1',
+      'o1-mini',
+      'gpt-4-turbo',
+      'gpt-4',
+    ];
   });
 
   ipcMain.handle('app:platform', () => {
@@ -201,30 +232,33 @@ function registerIpcHandlers(): void {
 }
 
 /**
- * Registers a global keyboard shortcut for toggling recording.
- * Unregisters only the previously registered shortcut rather than all shortcuts.
+ * Registers the global shortcut using the ShortcutManager.
+ * Supports both toggle mode (press to start/stop) and push-to-talk (hold to record).
  */
-function registerGlobalShortcut(hotkey: string): void {
-  if (currentRegisteredShortcut) {
-    globalShortcut.unregister(currentRegisteredShortcut);
-    currentRegisteredShortcut = null;
-  }
-
-  try {
-    const registered = globalShortcut.register(hotkey, () => {
-      isRecording = !isRecording;
-      trayManager?.setRecording(isRecording);
-      mainWindow?.webContents.send('recording:toggle');
+function registerShortcut(settings: AppSettings): void {
+  if (!shortcutManager) {
+    shortcutManager = new ShortcutManager({
+      onRecordingToggle: () => {
+        isRecording = !isRecording;
+        trayManager?.setRecording(isRecording);
+        mainWindow?.webContents.send('recording:toggle');
+      },
+      onRecordingStart: () => {
+        if (isRecording) return; // Already recording
+        isRecording = true;
+        trayManager?.setRecording(true);
+        mainWindow?.webContents.send('recording:start');
+      },
+      onRecordingStop: () => {
+        if (!isRecording) return; // Not recording
+        isRecording = false;
+        trayManager?.setRecording(false);
+        mainWindow?.webContents.send('recording:stop');
+      },
     });
-
-    if (registered) {
-      currentRegisteredShortcut = hotkey;
-    } else {
-      console.error('Failed to register global shortcut:', hotkey);
-    }
-  } catch (err) {
-    console.error('Error registering global shortcut:', err);
   }
+
+  shortcutManager.register(settings.hotkey, settings.recordingMode);
 }
 
 const gotLock = app.requestSingleInstanceLock();
@@ -265,7 +299,7 @@ if (!gotLock) {
     }
 
     const settings = settingsStore.get();
-    registerGlobalShortcut(settings.hotkey);
+    registerShortcut(settings);
   });
 
   app.on('window-all-closed', () => {
@@ -287,7 +321,7 @@ if (!gotLock) {
   });
 
   app.on('will-quit', () => {
-    globalShortcut.unregisterAll();
+    shortcutManager?.destroy();
     trayManager?.destroy();
   });
 }

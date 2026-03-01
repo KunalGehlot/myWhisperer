@@ -42,6 +42,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('recording:toggle', handler);
   },
 
+  /** Registers a callback for push-to-talk recording start (keydown). Returns an unsubscribe function. */
+  onRecordingStart: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('recording:start', handler);
+    return () => ipcRenderer.removeListener('recording:start', handler);
+  },
+
+  /** Registers a callback for push-to-talk recording stop (keyup). Returns an unsubscribe function. */
+  onRecordingStop: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('recording:stop', handler);
+    return () => ipcRenderer.removeListener('recording:stop', handler);
+  },
+
   /** Registers a callback for settings change events. Returns an unsubscribe function. */
   onSettingsChanged: (callback: (settings: unknown) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, settings: unknown) =>

@@ -33,12 +33,21 @@ const LANGUAGES = [
 ];
 
 const GPT_MODELS = [
-  'gpt-4',
-  'gpt-4-turbo',
-  'gpt-4o',
-  'gpt-4o-mini',
-  'gpt-3.5-turbo',
+  { value: 'gpt-4.1', label: 'GPT-4.1', desc: 'Latest, most capable' },
+  { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini', desc: 'Fast and affordable' },
+  { value: 'gpt-4.1-nano', label: 'GPT-4.1 Nano', desc: 'Fastest, lowest cost' },
+  { value: 'gpt-4o', label: 'GPT-4o', desc: 'Multimodal' },
+  { value: 'gpt-4o-mini', label: 'GPT-4o Mini', desc: 'Compact multimodal' },
+  { value: 'o4-mini', label: 'o4 Mini', desc: 'Reasoning, compact' },
+  { value: 'o3', label: 'o3', desc: 'Reasoning' },
+  { value: 'o3-mini', label: 'o3 Mini', desc: 'Reasoning, fast' },
+  { value: 'o1', label: 'o1', desc: 'Reasoning (prev gen)' },
+  { value: 'o1-mini', label: 'o1 Mini', desc: 'Reasoning, compact (prev gen)' },
+  { value: 'gpt-4-turbo', label: 'GPT-4 Turbo', desc: 'Legacy turbo' },
+  { value: 'gpt-4', label: 'GPT-4', desc: 'Legacy' },
 ];
+
+const GPT_MODEL_VALUES = GPT_MODELS.map((m) => m.value);
 
 const inputClass =
   'w-full px-3 py-2 rounded-lg border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors';
@@ -66,11 +75,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
   const [saving, setSaving] = useState(false);
   const [customModel, setCustomModel] = useState('');
   const [useCustomModel, setUseCustomModel] = useState(false);
+  const [isCapturingHotkey, setIsCapturingHotkey] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
     setLocal(settings);
-    if (!GPT_MODELS.includes(settings.gptModel)) {
+    if (!GPT_MODEL_VALUES.includes(settings.gptModel)) {
       setUseCustomModel(true);
       setCustomModel(settings.gptModel);
     }
@@ -120,6 +130,53 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
   const removeDictWord = (word: string) => {
     update({ personalDictionary: local.personalDictionary.filter((w) => w !== word) });
   };
+
+  const handleHotkeyCapture = (e: React.KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.key === 'Escape') {
+      setIsCapturingHotkey(false);
+      return;
+    }
+
+    // Ignore modifier-only presses
+    if (['Meta', 'Control', 'Alt', 'Shift', 'OS'].includes(e.key)) return;
+
+    const parts: string[] = [];
+    if (e.ctrlKey) parts.push('Control');
+    if (e.metaKey) parts.push('Command');
+    if (e.altKey) parts.push('Alt');
+    if (e.shiftKey) parts.push('Shift');
+
+    // Map key names to Electron accelerator format
+    let key = e.key;
+    if (key === ' ') key = 'Space';
+    else if (key.length === 1) key = key.toUpperCase();
+    else if (key === 'ArrowUp') key = 'Up';
+    else if (key === 'ArrowDown') key = 'Down';
+    else if (key === 'ArrowLeft') key = 'Left';
+    else if (key === 'ArrowRight') key = 'Right';
+    else if (key === 'Enter') key = 'Return';
+    else if (key === 'Backspace') key = 'Backspace';
+    else if (key === 'Delete') key = 'Delete';
+    else if (key === 'Tab') key = 'Tab';
+
+    parts.push(key);
+
+    const accelerator = parts.join('+');
+    update({ hotkey: accelerator });
+    setIsCapturingHotkey(false);
+  };
+
+  const formattingLabel =
+    local.gptFormattingLevel === 0
+      ? 'No formatting (raw transcription)'
+      : local.gptFormattingLevel <= 30
+        ? 'Light (capitalization, filler removal)'
+        : local.gptFormattingLevel <= 70
+          ? 'Moderate (grammar, punctuation)'
+          : 'Full (context-aware rewrite based on active app)';
 
   return (
     <div className="h-full overflow-y-auto px-4 py-4 space-y-6">
@@ -174,7 +231,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
                   className={selectClass}
                 >
                   {GPT_MODELS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
+                    <option key={m.value} value={m.value}>
+                      {m.label} — {m.desc}
+                    </option>
                   ))}
                 </select>
                 <button
@@ -191,15 +250,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
                   type="text"
                   value={customModel}
                   onChange={(e) => setCustomModel(e.target.value)}
-                  placeholder="e.g. gpt-4o-2024-05-13"
+                  placeholder="e.g. gpt-4.1-2025-04-14"
                   className={inputClass}
                 />
                 <button
                   onClick={() => {
                     setUseCustomModel(false);
                     setCustomModel('');
-                    if (!GPT_MODELS.includes(local.gptModel)) {
-                      update({ gptModel: 'gpt-4' });
+                    if (!GPT_MODEL_VALUES.includes(local.gptModel)) {
+                      update({ gptModel: 'gpt-4.1' });
                     }
                   }}
                   className="text-xs text-primary-600 dark:text-primary-400 hover:underline"
@@ -220,31 +279,58 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
           <div>
             <Label>Recording Mode</Label>
             <div className="flex gap-2">
-              <button
-                className="flex-1 px-3 py-2 text-sm rounded-lg border transition-colors border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium"
-                type="button"
-              >
-                Toggle
-              </button>
-              <button
-                disabled
-                className="flex-1 px-3 py-2 text-sm rounded-lg border transition-colors border-surface-300 dark:border-surface-600 text-surface-400 dark:text-surface-500 cursor-not-allowed opacity-60"
-                type="button"
-                title="Push-to-talk requires key-up events which are not yet supported"
-              >
-                Push to Talk (Coming soon)
-              </button>
+              {(['toggle', 'push-to-talk'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => update({ recordingMode: mode })}
+                  className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-colors ${
+                    local.recordingMode === mode
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
+                      : 'border-surface-300 dark:border-surface-600 text-surface-600 dark:text-surface-400 hover:bg-surface-50 dark:hover:bg-surface-700'
+                  }`}
+                  type="button"
+                >
+                  {mode === 'toggle' ? 'Toggle' : 'Push to Talk'}
+                </button>
+              ))}
             </div>
+            <p className="text-xs text-surface-400 mt-1">
+              {local.recordingMode === 'toggle'
+                ? 'Press hotkey to start, press again to stop'
+                : 'Hold hotkey to record, release to stop'}
+            </p>
           </div>
           <div>
             <Label>Hotkey</Label>
-            <input
-              type="text"
-              value={local.hotkey}
-              readOnly
-              className={inputClass + ' bg-surface-50 dark:bg-surface-700 cursor-not-allowed'}
-            />
-            <p className="text-xs text-surface-400 mt-1">Default: Cmd+Shift+Space. To change, edit the configuration file.</p>
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setIsCapturingHotkey(true)}
+              onKeyDown={(e) => {
+                if (isCapturingHotkey) {
+                  handleHotkeyCapture(e);
+                } else if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setIsCapturingHotkey(true);
+                }
+              }}
+              onBlur={() => setIsCapturingHotkey(false)}
+              className={`${inputClass} cursor-pointer select-none flex items-center justify-between ${
+                isCapturingHotkey ? 'ring-2 ring-primary-500 border-primary-500' : ''
+              }`}
+            >
+              {isCapturingHotkey ? (
+                <span className="text-primary-500 dark:text-primary-400 animate-pulse">Press your shortcut...</span>
+              ) : (
+                <span>{local.hotkey}</span>
+              )}
+              {!isCapturingHotkey && (
+                <span className="text-xs text-surface-400">Click to change</span>
+              )}
+            </div>
+            <p className="text-xs text-surface-400 mt-1">
+              Click the field above, then press your desired key combination. Press Escape to cancel.
+            </p>
           </div>
           <div>
             <Label>Audio Input Device</Label>
@@ -284,14 +370,36 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
         <SectionTitle>Formatting</SectionTitle>
         <div className="space-y-3">
           <div>
+            <Label>GPT Formatting Level</Label>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-surface-400 w-8">Raw</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={local.gptFormattingLevel}
+                onChange={(e) => update({ gptFormattingLevel: parseInt(e.target.value, 10) })}
+                className="flex-1 h-2 rounded-lg appearance-none cursor-pointer accent-primary-600 bg-surface-200 dark:bg-surface-700"
+              />
+              <span className="text-xs text-surface-400 w-12 text-right">Full</span>
+            </div>
+            <p className="text-xs text-surface-400 mt-1">
+              {local.gptFormattingLevel}% &mdash; {formattingLabel}
+            </p>
+          </div>
+          <div>
             <Label>Custom Format Prompt</Label>
             <textarea
               value={local.formatPrompt}
               onChange={(e) => update({ formatPrompt: e.target.value })}
-              placeholder="e.g. Format as bullet points, fix grammar, use professional tone..."
+              placeholder="Leave empty to use the level-based smart prompt above. Set a custom prompt to override it."
               rows={3}
               className={inputClass + ' resize-none'}
             />
+            <p className="text-xs text-surface-400 mt-1">
+              When set, this overrides the level-based formatting above.
+            </p>
           </div>
           <div>
             <Label>Personal Dictionary</Label>
@@ -416,7 +524,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
       </section>
 
       {/* Save button */}
-      <div className="sticky bottom-0 pt-3 pb-2 bg-white dark:bg-surface-900">
+      <div className="sticky bottom-0 pt-3 pb-2 bg-gradient-to-t from-white via-white dark:from-surface-900 dark:via-surface-900">
         <button
           onClick={handleSave}
           disabled={saving}

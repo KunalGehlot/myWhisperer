@@ -1,6 +1,6 @@
 {
   "name": "my-whisperer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Open-source voice-to-text desktop application powered by OpenAI Whisper and GPT",
   "main": "dist/main/main/main.js",
   "author": "Kunal Gehlot",
@@ -23,26 +23,37 @@
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:win": "npm run build && electron-builder --win",
     "dist:linux": "npm run build && electron-builder --linux",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.main.json --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.main.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "generate-icons": "node scripts/generate-icons.js"
   },
   "dependencies": {
     "electron-store": "^8.2.0",
     "openai": "^4.73.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "uiohook-napi": "^1.5.4"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.20",
     "concurrently": "^9.1.0",
-    "electron": "^33.2.0",
-    "electron-builder": "^25.1.0",
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.0",
+    "jsdom": "^28.1.0",
+    "png-to-ico": "^3.0.1",
     "postcss": "^8.4.49",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.7.0",
     "vite": "^6.0.0",
+    "vitest": "^4.0.18",
     "wait-on": "^9.0.4"
   },
   "build": {
@@ -55,6 +66,15 @@
       "dist/**/*",
       "resources/**/*"
     ],
+    "asarUnpack": [
+      "node_modules/uiohook-napi/**"
+    ],
+    "publish": [
+      {
+        "provider": "github"
+      }
+    ],
+    "afterSign": "scripts/notarize.js",
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "resources/icon.icns",
@@ -64,7 +84,10 @@
       ],
       "entitlements": "resources/entitlements.mac.plist",
       "entitlementsInherit": "resources/entitlements.mac.plist",
-      "hardenedRuntime": true
+      "hardenedRuntime": true,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "myWhisperer needs microphone access to record and transcribe your voice."
+      }
     },
     "win": {
       "icon": "resources/icon.ico",

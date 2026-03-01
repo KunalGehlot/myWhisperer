@@ -46,12 +46,18 @@ const AppContent: React.FC = () => {
     statusMessage: '',
   });
   const [historyRefresh, setHistoryRefresh] = useState(0);
+  const [platform, setPlatform] = useState('');
 
   const { settings, updateSettings, loaded } = useSettings();
   const { isRecording, duration, audioLevel, startRecording, stopRecording } = useAudioRecorder();
   const { showToast } = useToast();
 
   const isProcessing = processing.isProcessing;
+  const isMac = platform === 'darwin';
+
+  useEffect(() => {
+    window.electronAPI.getPlatform().then(setPlatform);
+  }, []);
 
   // Apply theme
   useEffect(() => {
@@ -94,8 +100,6 @@ const AppContent: React.FC = () => {
 
       setLatestResult(result);
       setHistoryRefresh((n) => n + 1);
-
-      // Auto-copy/paste is handled by the main process in audio:process
     } catch (err) {
       const detail = err instanceof Error ? err.message : 'Unknown error';
       showToast(`Transcription failed: ${detail}`, 'error');
@@ -104,7 +108,7 @@ const AppContent: React.FC = () => {
     }
   }, [stopRecording, showToast]);
 
-  // Listen for hotkey recording toggle from main process (toggle mode only)
+  // Listen for hotkey events from main process (toggle mode)
   useEffect(() => {
     const unsub = window.electronAPI.onRecordingToggle(() => {
       if (isProcessing) return;
@@ -115,6 +119,22 @@ const AppContent: React.FC = () => {
       }
     });
     return unsub;
+  }, [isRecording, isProcessing, handleStartRecording, handleStopRecording]);
+
+  // Listen for push-to-talk events from main process
+  useEffect(() => {
+    const unsubStart = window.electronAPI.onRecordingStart(() => {
+      if (isProcessing || isRecording) return;
+      handleStartRecording();
+    });
+    const unsubStop = window.electronAPI.onRecordingStop(() => {
+      if (!isRecording) return;
+      handleStopRecording();
+    });
+    return () => {
+      unsubStart();
+      unsubStop();
+    };
   }, [isRecording, isProcessing, handleStartRecording, handleStopRecording]);
 
   if (!loaded) {
@@ -134,63 +154,41 @@ const AppContent: React.FC = () => {
   const showApiKeyBanner = currentView === 'main' && !settings.apiKey;
 
   return (
-    <div className="h-screen flex flex-col bg-white dark:bg-surface-900 text-surface-900 dark:text-surface-50">
-      {/* Titlebar */}
-      <div className="titlebar select-none flex items-center justify-between px-4 py-2 bg-surface-50 dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700">
-        <span className="text-sm font-semibold text-surface-700 dark:text-surface-200 tracking-tight">
-          myWhisperer
-        </span>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => window.electronAPI.minimizeToTray()}
-            className="titlebar-button w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors"
-            aria-label="Minimize to tray"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="2" y1="6" x2="10" y2="6" />
-            </svg>
-          </button>
-          <button
-            onClick={() => window.electronAPI.quitApp()}
-            className="titlebar-button w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 transition-colors"
-            aria-label="Quit"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="2" y1="2" x2="10" y2="10" />
-              <line x1="10" y1="2" x2="2" y2="10" />
-            </svg>
-          </button>
+    <div className="h-screen flex flex-col bg-gradient-to-b from-surface-50 to-white dark:from-surface-900 dark:to-surface-900 text-surface-900 dark:text-surface-50">
+      {/* macOS drag region - only shown on macOS where we use hiddenInset titlebar */}
+      {isMac && (
+        <div className="titlebar h-12 shrink-0 flex items-center justify-center">
+          <span className="text-[11px] font-semibold text-surface-400 dark:text-surface-500 tracking-widest uppercase">
+            myWhisperer
+          </span>
         </div>
-      </div>
+      )}
 
       {/* Navigation */}
-      <div className="flex items-center border-b border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900">
+      <nav className={`no-drag flex items-center gap-1 px-3 py-2 border-b border-surface-200/60 dark:border-surface-700/60 ${!isMac ? 'pt-3' : ''}`}>
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setCurrentView(id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors relative
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200
               ${currentView === id
-                ? 'text-primary-600 dark:text-primary-400'
-                : 'text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-300'
+                ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 font-medium shadow-sm'
+                : 'text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-700/50'
               }`}
           >
             <Icon active={currentView === id} />
             {label}
-            {currentView === id && (
-              <span className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-primary-600 dark:bg-primary-400 rounded-full" />
-            )}
           </button>
         ))}
-      </div>
+      </nav>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {currentView === 'main' && (
-          <div className="h-full flex flex-col items-center justify-center gap-8 px-4">
+          <div className="h-full flex flex-col">
             {showApiKeyBanner && (
-              <div className="w-full max-w-lg mx-auto">
-                <div className="flex items-start gap-3 p-4 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+              <div className="px-4 pt-4">
+                <div className="max-w-lg mx-auto flex items-start gap-3 p-4 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
                   <AlertIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
@@ -206,16 +204,23 @@ const AppContent: React.FC = () => {
                 </div>
               </div>
             )}
-            <RecordButton
-              isRecording={isRecording}
-              isProcessing={isProcessing}
-              duration={duration}
-              audioLevel={audioLevel}
-              statusMessage={processing.statusMessage}
-              onStart={handleStartRecording}
-              onStop={handleStopRecording}
-            />
-            <TranscriptionPanel result={latestResult} />
+            <div className="flex items-center justify-center py-8 shrink-0">
+              <RecordButton
+                isRecording={isRecording}
+                isProcessing={isProcessing}
+                duration={duration}
+                audioLevel={audioLevel}
+                statusMessage={processing.statusMessage}
+                recordingMode={settings.recordingMode}
+                onStart={handleStartRecording}
+                onStop={handleStopRecording}
+              />
+            </div>
+            {latestResult && (
+              <div className="flex-1 min-h-0 px-4 pb-4">
+                <TranscriptionPanel result={latestResult} />
+              </div>
+            )}
           </div>
         )}
         {currentView === 'settings' && (

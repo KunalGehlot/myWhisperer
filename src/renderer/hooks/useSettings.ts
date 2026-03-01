@@ -7,7 +7,7 @@ const defaultSettings: AppSettings = {
   whisperModel: 'whisper-1',
   gptModel: 'gpt-4',
   language: 'auto',
-  hotkey: 'CommandOrControl+Shift+Space',
+  hotkey: 'Control+Space',
   theme: 'system',
   autoPaste: true,
   autoCopy: true,
@@ -15,6 +15,7 @@ const defaultSettings: AppSettings = {
   audioInputDevice: 'default',
   personalDictionary: [],
   formatPrompt: '',
+  gptFormattingLevel: 70,
 };
 
 export function useSettings() {
