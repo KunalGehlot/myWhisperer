@@ -1,26 +1,12 @@
+/** Panel displaying transcription history with search, copy, and delete functionality. */
 import React, { useState, useEffect, useCallback } from 'react';
 import type { TranscriptionResult } from '../types';
+import { SearchIcon, CopyIcon, TrashIcon } from './Icons';
+import { ConfirmDialog } from './ConfirmDialog';
 
-const SearchIcon: React.FC = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" />
-    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-  </svg>
-);
-
-const CopyIcon: React.FC = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="9" y="9" width="13" height="13" rx="2" />
-    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-  </svg>
-);
-
-const TrashIcon: React.FC = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-  </svg>
-);
+interface HistoryPanelProps {
+  refreshTrigger?: number;
+}
 
 function formatTimestamp(ts: number): string {
   const d = new Date(ts);
@@ -38,15 +24,17 @@ function formatTimestamp(ts: number): string {
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const s = Math.floor(seconds % 60);
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
-export const HistoryPanel: React.FC = () => {
+export const HistoryPanel: React.FC<HistoryPanelProps> = ({ refreshTrigger }) => {
   const [items, setItems] = useState<TranscriptionResult[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const loadHistory = useCallback(async () => {
     const history = await window.electronAPI.getHistory();
@@ -55,7 +43,7 @@ export const HistoryPanel: React.FC = () => {
 
   useEffect(() => {
     loadHistory();
-  }, [loadHistory]);
+  }, [loadHistory, refreshTrigger]);
 
   const filtered = search.trim()
     ? items.filter(
@@ -75,17 +63,18 @@ export const HistoryPanel: React.FC = () => {
     await window.electronAPI.deleteHistoryItem(id);
     setItems((prev) => prev.filter((i) => i.id !== id));
     if (expandedId === id) setExpandedId(null);
+    setConfirmDeleteId(null);
   };
 
   const handleClearAll = async () => {
     await window.electronAPI.clearHistory();
     setItems([]);
     setExpandedId(null);
+    setConfirmClearAll(false);
   };
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
       <div className="flex items-center gap-2 px-4 pt-4 pb-2">
         <div className="relative flex-1">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400">
@@ -103,15 +92,15 @@ export const HistoryPanel: React.FC = () => {
         </div>
         {items.length > 0 && (
           <button
-            onClick={handleClearAll}
+            onClick={() => setConfirmClearAll(true)}
             className="px-3 py-2 text-xs font-medium rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shrink-0"
+            aria-label="Clear all history"
           >
             Clear All
           </button>
         )}
       </div>
 
-      {/* List */}
       <div className="flex-1 overflow-y-auto px-4 pb-4">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
@@ -169,14 +158,16 @@ export const HistoryPanel: React.FC = () => {
                           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
                             bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300
                             hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors"
+                          aria-label="Copy to clipboard"
                         >
                           <CopyIcon />
                           {copiedId === item.id ? 'Copied!' : 'Copy'}
                         </button>
                         <button
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => setConfirmDeleteId(item.id)}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
                             text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          aria-label="Delete transcription"
                         >
                           <TrashIcon />
                           Delete
@@ -190,6 +181,26 @@ export const HistoryPanel: React.FC = () => {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmClearAll}
+        title="Clear All History"
+        message="Are you sure you want to clear all history? This cannot be undone."
+        onConfirm={handleClearAll}
+        onCancel={() => setConfirmClearAll(false)}
+        variant="danger"
+        confirmLabel="Clear All"
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Delete Transcription"
+        message="Are you sure you want to delete this transcription? This cannot be undone."
+        onConfirm={() => confirmDeleteId && handleDelete(confirmDeleteId)}
+        onCancel={() => setConfirmDeleteId(null)}
+        variant="danger"
+        confirmLabel="Delete"
+      />
     </div>
   );
 };

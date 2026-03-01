@@ -1,4 +1,6 @@
+/** Main recording button with audio level visualization and status display. */
 import React from 'react';
+import { MicIcon, StopIcon } from './Icons';
 
 interface RecordButtonProps {
   isRecording: boolean;
@@ -12,24 +14,9 @@ interface RecordButtonProps {
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
-
-const MicIcon: React.FC = () => (
-  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="9" y="1" width="6" height="12" rx="3" />
-    <path d="M5 10a7 7 0 0 0 14 0" />
-    <line x1="12" y1="17" x2="12" y2="21" />
-    <line x1="8" y1="21" x2="16" y2="21" />
-  </svg>
-);
-
-const StopIcon: React.FC = () => (
-  <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
-    <rect x="5" y="5" width="14" height="14" rx="2" />
-  </svg>
-);
 
 const SpinnerIcon: React.FC = () => (
   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
@@ -61,7 +48,6 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="relative flex items-center justify-center">
-        {/* Audio level ring */}
         {isRecording && (
           <div
             className="absolute w-36 h-36 rounded-full bg-red-500/20 transition-transform duration-100"
@@ -69,7 +55,6 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
           />
         )}
 
-        {/* Ripple animations when recording */}
         {isRecording && (
           <>
             <div className="absolute w-32 h-32 rounded-full border-2 border-red-400/40 animate-ripple" />
@@ -97,11 +82,10 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
           `}
           aria-label={isRecording ? 'Stop recording' : isProcessing ? 'Processing' : 'Start recording'}
         >
-          {isProcessing ? <SpinnerIcon /> : isRecording ? <StopIcon /> : <MicIcon />}
+          {isProcessing ? <SpinnerIcon /> : isRecording ? <StopIcon className="w-9 h-9" /> : <MicIcon className="w-10 h-10" />}
         </button>
       </div>
 
-      {/* Status text */}
       <div className="text-center h-8">
         {isRecording && (
           <span className="text-red-500 dark:text-red-400 font-medium text-lg tabular-nums">

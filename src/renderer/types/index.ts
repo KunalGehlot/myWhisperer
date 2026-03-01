@@ -23,16 +23,8 @@ export interface AppSettings {
   formatPrompt: string;
 }
 
-export interface RecordingState {
-  isRecording: boolean;
-  isPaused: boolean;
-  duration: number;
-  audioLevel: number;
-}
-
 export interface ProcessingState {
-  isTranscribing: boolean;
-  isFormatting: boolean;
+  isProcessing: boolean;
   progress: number;
   statusMessage: string;
 }
@@ -42,8 +34,7 @@ export type GPTModel =
   | 'gpt-4-turbo'
   | 'gpt-4o'
   | 'gpt-4o-mini'
-  | 'gpt-3.5-turbo'
-  | string;
+  | 'gpt-3.5-turbo';
 
 export interface AudioDevice {
   deviceId: string;
@@ -65,7 +56,7 @@ export interface ElectronAPI {
   minimizeToTray: () => void;
   quitApp: () => void;
   getAvailableModels: () => Promise<string[]>;
-  platform: string;
+  getPlatform: () => Promise<string>;
 }
 
 declare global {

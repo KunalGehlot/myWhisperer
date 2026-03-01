@@ -1,17 +1,27 @@
+/**
+ * Clipboard utilities for myWhisperer.
+ * Provides cross-platform copy and paste operations using secure child process execution.
+ */
 import { clipboard } from 'electron';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 
+/** Writes the given text to the system clipboard. */
 function copyToClipboard(text: string): void {
   clipboard.writeText(text);
 }
 
+/**
+ * Pastes text into the currently active application by writing to the clipboard
+ * and simulating a platform-specific paste keystroke.
+ */
 function pasteToActiveApp(text: string): Promise<void> {
   return new Promise((resolve, reject) => {
     clipboard.writeText(text);
 
     if (process.platform === 'darwin') {
-      exec(
-        `osascript -e 'tell application "System Events" to keystroke "v" using command down'`,
+      execFile(
+        'osascript',
+        ['-e', 'tell application "System Events" to keystroke "v" using command down'],
         (error) => {
           if (error) {
             reject(error);
@@ -21,8 +31,9 @@ function pasteToActiveApp(text: string): Promise<void> {
         }
       );
     } else if (process.platform === 'win32') {
-      exec(
-        'powershell -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait(\'^v\')"',
+      execFile(
+        'powershell',
+        ['-command', "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('^v')"],
         (error) => {
           if (error) {
             reject(error);
@@ -32,7 +43,7 @@ function pasteToActiveApp(text: string): Promise<void> {
         }
       );
     } else {
-      exec('xdotool key ctrl+v', (error) => {
+      execFile('xdotool', ['key', 'ctrl+v'], (error) => {
         if (error) {
           reject(error);
         } else {

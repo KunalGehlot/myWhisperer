@@ -16,22 +16,24 @@ Bring your own OpenAI API key. No subscriptions. No recurring fees. Your data st
 
 ## Features
 
-- **Voice-to-text powered by OpenAI Whisper** -- accurate transcription across 100+ languages
+- **Voice-to-text powered by OpenAI Whisper** -- accurate transcription in many languages
 - **AI text formatting with GPT** -- automatic grammar correction, punctuation, and filler word removal
 - **Choose any GPT model** -- select from GPT-4, GPT-4-turbo, GPT-4o, GPT-3.5-turbo, or any model available on your API key
-- **Global hotkey** -- start and stop recording from anywhere with a configurable keyboard shortcut
+- **Global hotkey** -- start and stop recording from anywhere with a keyboard shortcut
 - **System tray integration** -- runs quietly in the background, always ready when you need it
 - **Auto-paste into active application** -- transcribed text is automatically pasted where your cursor is
 - **Personal dictionary** -- add custom terminology, names, and jargon for more accurate transcriptions
 - **Transcription history** -- browse, search, and reuse past transcriptions
 - **Dark and light theme** -- matches your system preference or set it manually
-- **100+ language support** -- Whisper supports transcription in over 100 languages
+- **Multi-language support** -- Whisper supports 100+ languages. The UI provides 19 common language presets with auto-detection enabled by default.
 - **Cross-platform** -- runs on macOS, Windows, and Linux
 - **Fully local and private** -- your API key never leaves your machine, and no data is stored on external servers
+- **Push-to-talk mode** -- coming soon
 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) 18 or later
+- [npm](https://www.npmjs.com/)
 - An [OpenAI API key](https://platform.openai.com/api-keys)
 
 ## Installation
@@ -66,10 +68,10 @@ Built packages are output to the `release/` directory.
 
 1. Launch myWhisperer.
 2. Open **Settings** and enter your OpenAI API key.
-3. Choose your preferred GPT model for text formatting (default: GPT-4).
-4. Set your global hotkey (default: `Ctrl+Shift+Space` / `Cmd+Shift+Space`).
+3. Choose your preferred GPT model for text formatting (default: gpt-4).
+4. The global hotkey is `Ctrl+Shift+Space` (`Cmd+Shift+Space` on macOS).
 5. Press the hotkey to start recording. Speak naturally.
-6. Press the hotkey again (or release if using push-to-talk mode) to stop.
+6. Press the hotkey again to stop recording.
 7. Your transcription is automatically formatted, copied to your clipboard, and pasted into the active application.
 
 ## Configuration
@@ -86,10 +88,20 @@ All settings are accessible from the Settings panel inside the app:
 | Theme | Light, dark, or system | System |
 | Auto-paste | Paste text into active app after transcription | Enabled |
 | Auto-copy | Copy text to clipboard after transcription | Enabled |
-| Recording Mode | Push-to-talk or toggle | Toggle |
+| Recording Mode | Toggle (push-to-talk coming soon) | Toggle |
 | Audio Input | Microphone device | System default |
 | Personal Dictionary | Custom words and phrases for better accuracy | -- |
 | Format Prompt | Custom instructions for GPT formatting | Built-in |
+
+## Known Limitations
+
+- **Push-to-talk mode** is planned but not yet available. Toggle mode works.
+- **Hotkey** is not configurable from the UI yet. It can be changed in the config file.
+- **API key verification** requires a manual test in the settings panel.
+
+## Security
+
+API keys are encrypted using your OS keychain (macOS Keychain, Windows DPAPI). Transcription history is stored locally and never sent to external servers.
 
 ## Architecture
 
@@ -129,7 +141,7 @@ The **main process** handles all system-level operations: audio recording, API c
 | Styling | [Tailwind CSS](https://tailwindcss.com/) 3.4 |
 | Bundler | [Vite](https://vite.dev/) 6 |
 | AI | [OpenAI SDK](https://github.com/openai/openai-node) 4.x |
-| Storage | [electron-store](https://github.com/sindresorhus/electron-store) 10 |
+| Storage | [electron-store](https://github.com/sindresorhus/electron-store) 8 |
 | Packaging | [electron-builder](https://www.electron.build/) 25 |
 
 ## Development
@@ -169,7 +181,6 @@ myWhisperer/
 | `npm run build` | Build renderer and main process for production |
 | `npm start` | Build and launch the app |
 | `npm run dist` | Build and package distributable for current platform |
-| `npm run lint` | Run ESLint |
 | `npm run typecheck` | Run TypeScript type checking |
 
 ### Setting Up Your Development Environment
@@ -187,6 +198,8 @@ Contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 Future plans for myWhisperer:
 
+- **Push-to-talk recording mode** -- hold-to-record as an alternative to toggle mode
+- **Configurable hotkey from UI** -- change the global shortcut without editing config files
 - **Local Whisper model support** -- run transcription entirely on-device without an API key
 - **Snippet library** -- save and reuse frequently dictated text blocks
 - **Per-app tone profiles** -- automatically adjust GPT formatting style based on the target application (e.g., formal for email, casual for chat)

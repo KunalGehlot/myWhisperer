@@ -1,25 +1,13 @@
+/** Settings panel for configuring API keys, models, recording, formatting, and appearance. */
 import React, { useState, useEffect } from 'react';
 import type { AppSettings, AudioDevice } from '../types';
+import { EyeIcon, EyeOffIcon, XIcon, SunIcon, MoonIcon } from './Icons';
+import { useToast } from './Toast';
 
 interface SettingsPanelProps {
   settings: AppSettings;
   onSave: (patch: Partial<AppSettings>) => Promise<void>;
 }
-
-const EyeIcon: React.FC = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
-
-const EyeOffIcon: React.FC = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-    <line x1="1" y1="1" x2="23" y2="23" />
-  </svg>
-);
 
 const LANGUAGES = [
   { value: 'auto', label: 'Auto-detect' },
@@ -76,9 +64,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
   const [devices, setDevices] = useState<AudioDevice[]>([]);
   const [dictWord, setDictWord] = useState('');
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [customModel, setCustomModel] = useState('');
   const [useCustomModel, setUseCustomModel] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     setLocal(settings);
@@ -103,19 +91,22 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
 
   const update = (patch: Partial<AppSettings>) => {
     setLocal((prev) => ({ ...prev, ...patch }));
-    setSaved(false);
   };
 
   const handleSave = async () => {
     setSaving(true);
-    const toSave = { ...local };
-    if (useCustomModel && customModel.trim()) {
-      toSave.gptModel = customModel.trim();
+    try {
+      const toSave = { ...local };
+      if (useCustomModel && customModel.trim()) {
+        toSave.gptModel = customModel.trim();
+      }
+      await onSave(toSave);
+      showToast('Settings saved', 'success');
+    } catch {
+      showToast('Failed to save settings', 'error');
+    } finally {
+      setSaving(false);
     }
-    await onSave(toSave);
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
   };
 
   const addDictWord = () => {
@@ -150,6 +141,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
                 onClick={() => setShowKey(!showKey)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-colors"
                 type="button"
+                aria-label={showKey ? 'Hide API key' : 'Show API key'}
               >
                 {showKey ? <EyeOffIcon /> : <EyeIcon />}
               </button>
@@ -170,6 +162,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
               readOnly
               className={inputClass + ' bg-surface-50 dark:bg-surface-700 cursor-not-allowed'}
             />
+            <p className="text-xs text-surface-400 mt-1">Currently the only model available via the OpenAI API</p>
           </div>
           <div>
             <Label>GPT Model</Label>
@@ -197,10 +190,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
                 <input
                   type="text"
                   value={customModel}
-                  onChange={(e) => {
-                    setCustomModel(e.target.value);
-                    setSaved(false);
-                  }}
+                  onChange={(e) => setCustomModel(e.target.value)}
                   placeholder="e.g. gpt-4o-2024-05-13"
                   className={inputClass}
                 />
@@ -209,7 +199,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
                     setUseCustomModel(false);
                     setCustomModel('');
                     if (!GPT_MODELS.includes(local.gptModel)) {
-                      update({ gptModel: 'gpt-4o-mini' });
+                      update({ gptModel: 'gpt-4' });
                     }
                   }}
                   className="text-xs text-primary-600 dark:text-primary-400 hover:underline"
@@ -230,20 +220,20 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
           <div>
             <Label>Recording Mode</Label>
             <div className="flex gap-2">
-              {(['toggle', 'push-to-talk'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => update({ recordingMode: mode })}
-                  className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-colors ${
-                    local.recordingMode === mode
-                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'
-                      : 'border-surface-300 dark:border-surface-600 text-surface-600 dark:text-surface-400 hover:bg-surface-50 dark:hover:bg-surface-700'
-                  }`}
-                  type="button"
-                >
-                  {mode === 'toggle' ? 'Toggle' : 'Push to Talk'}
-                </button>
-              ))}
+              <button
+                className="flex-1 px-3 py-2 text-sm rounded-lg border transition-colors border-primary-500 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium"
+                type="button"
+              >
+                Toggle
+              </button>
+              <button
+                disabled
+                className="flex-1 px-3 py-2 text-sm rounded-lg border transition-colors border-surface-300 dark:border-surface-600 text-surface-400 dark:text-surface-500 cursor-not-allowed opacity-60"
+                type="button"
+                title="Push-to-talk requires key-up events which are not yet supported"
+              >
+                Push to Talk (Coming soon)
+              </button>
             </div>
           </div>
           <div>
@@ -254,7 +244,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
               readOnly
               className={inputClass + ' bg-surface-50 dark:bg-surface-700 cursor-not-allowed'}
             />
-            <p className="text-xs text-surface-400 mt-1">Configured in system preferences</p>
+            <p className="text-xs text-surface-400 mt-1">Default: Cmd+Shift+Space. To change, edit the configuration file.</p>
           </div>
           <div>
             <Label>Audio Input Device</Label>
@@ -335,11 +325,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
                       onClick={() => removeDictWord(word)}
                       className="hover:text-red-500 transition-colors"
                       type="button"
+                      aria-label={`Remove word: ${word}`}
                     >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
+                      <XIcon className="w-3 h-3" />
                     </button>
                   </span>
                 ))}
@@ -366,17 +354,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
                 }`}
                 type="button"
               >
-                {t === 'light' && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="5" />
-                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-                  </svg>
-                )}
-                {t === 'dark' && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                  </svg>
-                )}
+                {t === 'light' && <SunIcon />}
+                {t === 'dark' && <MoonIcon />}
                 {t === 'system' && (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="2" y="3" width="20" height="14" rx="2" />
@@ -405,6 +384,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
               type="button"
               role="switch"
               aria-checked={local.autoCopy}
+              aria-label="Toggle auto-copy to clipboard"
             >
               <span
                 className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
@@ -423,6 +403,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
               type="button"
               role="switch"
               aria-checked={local.autoPaste}
+              aria-label="Toggle auto-paste to active app"
             >
               <span
                 className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
@@ -439,13 +420,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
         <button
           onClick={handleSave}
           disabled={saving}
-          className={`w-full py-2.5 rounded-xl text-sm font-medium transition-all ${
-            saved
-              ? 'bg-green-500 text-white'
-              : 'bg-primary-600 hover:bg-primary-700 text-white shadow-sm hover:shadow'
-          } disabled:opacity-50`}
+          className="w-full py-2.5 rounded-xl text-sm font-medium transition-all bg-primary-600 hover:bg-primary-700 text-white shadow-sm hover:shadow disabled:opacity-50"
         >
-          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Settings'}
+          {saving ? 'Saving...' : 'Save Settings'}
         </button>
       </div>
     </div>

@@ -9,6 +9,7 @@ interface UseAudioRecorderReturn {
   audioBlob: Blob | null;
 }
 
+/** Hook that manages audio recording via MediaRecorder with real-time level monitoring. */
 export function useAudioRecorder(): UseAudioRecorderReturn {
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -65,7 +66,10 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     source.connect(analyser);
     analyserRef.current = analyser;
 
-    const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    const recorderOptions: MediaRecorderOptions = MediaRecorder.isTypeSupported('audio/webm')
+      ? { mimeType: 'audio/webm' }
+      : {};
+    const recorder = new MediaRecorder(stream, recorderOptions);
     mediaRecorderRef.current = recorder;
 
     recorder.ondataavailable = (e) => {
@@ -73,7 +77,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     };
 
     recorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' });
       setAudioBlob(blob);
       if (resolveStopRef.current) {
         resolveStopRef.current(blob);
