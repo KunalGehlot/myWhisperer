@@ -13,24 +13,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Context-aware smart formatting (detects active application for intelligent formatting)
 - GPT formatting level slider (0-100%) with tiered prompts (Light / Moderate / Full)
 - Active window context detection for macOS, Windows, and Linux
+- Side-by-side transcription view (original and GPT-formatted text)
+- Built-in prompt viewer — see the active prompt for each formatting level in Settings
+- Customizable global hotkey with click-to-capture keyboard input
+- 12 GPT models including GPT-4.1 family, o-series reasoning models
 - CI/CD release pipeline (auto-build and publish on push to broad branch)
 - GitHub Releases with platform-specific installers (DMG, EXE, AppImage, DEB)
 - macOS notarization support (when Apple credentials are configured)
-- Unit test framework (Vitest with React Testing Library)
+- Unit test framework (Vitest with React Testing Library, 24 tests)
 - NSMicrophoneUsageDescription for macOS app permission prompt
 - App icons for all platforms (icns, ico, png)
 - Icon generation script (scripts/generate-icons.js)
+- macOS Gatekeeper bypass and self-signing instructions in README
 
 ### Changed
 
 - Upgraded Electron from v33 to v35+ (security fixes)
 - Upgraded electron-builder from v25 to v26+ (tar vulnerability fixes)
+- UI overhaul: native titlebar on Windows/Linux, hiddenInset on macOS, pill-style navigation
 - Recording mode buttons are now fully interactive (push-to-talk enabled)
+- Default hotkey changed to `Control+Space`
+- Default GPT model changed to `gpt-4.1`
 - Default formatting level set to 70% (moderate formatting)
 - Default system prompt is now context-aware (adapts to email, chat, code, notes, etc.)
+- Record button properly centered with overflow-safe container
 
 ### Fixed
 
+- Hotkey capture now uses window-level keyboard listener (reliable on macOS)
+- Settings now merge with defaults on upgrade (new fields get proper defaults)
+- Record button no longer clips outside its container
 - Resolved ASAR integrity bypass vulnerability (GHSA-vmqv-hx8q-j7mg)
 - Resolved tar path traversal vulnerabilities (9 high severity)
 - 0 npm audit vulnerabilities

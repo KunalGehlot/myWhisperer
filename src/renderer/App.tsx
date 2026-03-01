@@ -204,7 +204,7 @@ const AppContent: React.FC = () => {
                 </div>
               </div>
             )}
-            <div className="flex items-center justify-center py-8 shrink-0">
+            <div className="flex items-center justify-center py-6 shrink-0 overflow-visible">
               <RecordButton
                 isRecording={isRecording}
                 isProcessing={isProcessing}

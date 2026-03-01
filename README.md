@@ -1,44 +1,86 @@
 # myWhisperer
 
-**Open-source voice-to-text for your desktop. Powered by OpenAI Whisper and GPT.**
+**Free, open-source voice-to-text desktop app. Powered by OpenAI Whisper and GPT.**
+
+> Turn your voice into perfectly formatted text — in any app, on any platform. A local, privacy-first alternative to subscription-based dictation tools like Wispr Flow, Otter.ai, and Dragon NaturallySpeaking.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)]()
+[![GitHub Release](https://img.shields.io/github/v/release/KunalGehlot/myWhisperer)](https://github.com/KunalGehlot/myWhisperer/releases/latest)
+[![GitHub Downloads](https://img.shields.io/github/downloads/KunalGehlot/myWhisperer/total)](https://github.com/KunalGehlot/myWhisperer/releases)
 
 ---
 
 ## About
 
-myWhisperer is an open-source desktop application that turns your voice into text using OpenAI's Whisper API, then polishes it with GPT for clean, publication-ready output. It is a local, privacy-first alternative to subscription-based dictation tools.
+myWhisperer is a **free, open-source desktop application** that turns your voice into text using OpenAI's Whisper API, then polishes it with GPT for clean, publication-ready output. It intelligently detects which application you're typing in and formats the text accordingly — emails sound professional, chat messages stay casual, code comments use the right syntax.
 
-Bring your own OpenAI API key. No subscriptions. No recurring fees. Your data stays yours.
+Bring your own OpenAI API key. **No subscriptions. No recurring fees. No data collection.** Your audio and text stay on your machine — only the OpenAI API calls leave your device.
+
+### Why myWhisperer?
+
+- **Free forever** — no subscriptions, pay only for the OpenAI API usage you consume
+- **Private by design** — no telemetry, no analytics, no data collection, no servers
+- **Context-aware** — automatically adapts formatting to your active application
+- **Open source** — MIT licensed, fully auditable, community-driven
 
 ## Features
 
-- **Voice-to-text transcription using OpenAI Whisper** -- accurate transcription in 100+ languages
-- **Context-aware smart formatting** -- detects the active application (email, chat, code editor, notes, terminal, etc.) and adapts output formatting automatically
-- **GPT formatting level slider** -- from 0% (raw transcription) to 100% (fully formatted with context-aware rewriting), with Light, Moderate, and Full tiers
-- **Two recording modes** -- Toggle (press to start/stop) and Push-to-Talk (hold to record, release to stop)
-- **Global hotkeys** -- `Cmd+Shift+Space` for toggle mode, `Control+Space` for push-to-talk (customizable)
-- **System tray integration** -- runs quietly in the background with minimize-to-tray
-- **Light/Dark/System theme support** -- matches your OS preference or set manually
-- **Personal dictionary** -- add custom terminology, names, and jargon for more accurate transcriptions
-- **Auto-copy and auto-paste** -- transcribed text is automatically copied to clipboard and pasted into the active application
-- **Transcription history** -- browse, search, and reuse past transcriptions
-- **Cross-platform** -- macOS, Windows, and Linux
-- **Secure** -- API key encryption via OS keychain (macOS Keychain, Windows DPAPI), context isolation enabled, no external data storage
+- **Voice-to-text transcription** — accurate speech recognition in 100+ languages using OpenAI Whisper
+- **Context-aware smart formatting** — detects the active application (email, chat, code editor, notes, terminal, etc.) and adapts output formatting automatically
+- **GPT formatting level slider** — from 0% (raw transcription) to 100% (fully formatted with context-aware rewriting), with Light, Moderate, and Full tiers
+- **Side-by-side transcription view** — see both the original raw transcription and the GPT-formatted version
+- **Two recording modes** — Toggle (press to start/stop) and Push-to-Talk (hold to record, release to stop)
+- **Customizable global hotkey** — default `Control+Space`, configurable to any key combination
+- **System tray integration** — runs quietly in the background with minimize-to-tray
+- **Light/Dark/System theme support** — matches your OS preference or set manually
+- **Personal dictionary** — add custom terminology, names, and jargon for more accurate transcriptions
+- **Auto-copy and auto-paste** — transcribed text is automatically copied to clipboard and pasted into the active application
+- **Transcription history** — browse, search, and reuse past transcriptions
+- **Cross-platform** — macOS, Windows, and Linux
+- **Secure** — API key encryption via OS keychain (macOS Keychain, Windows DPAPI), context isolation enabled, no external data storage
 
 ## Installation
 
-Download the latest release from [GitHub Releases](https://github.com/KunalGehlot/myWhisperer/releases):
+Download the latest release from [**GitHub Releases**](https://github.com/KunalGehlot/myWhisperer/releases/latest):
 
 | Platform | Format |
 |----------|--------|
-| macOS | `.dmg` |
+| macOS | `.dmg` or `.zip` |
 | Windows | NSIS installer (`.exe`) or portable `.exe` |
 | Linux | `.AppImage` or `.deb` |
 
-**Requires an [OpenAI API key](https://platform.openai.com/api-keys).**
+**Requires an [OpenAI API key](https://platform.openai.com/api-keys)** (pay-as-you-go, typically a few cents per transcription).
+
+### macOS: Bypassing Gatekeeper
+
+Since myWhisperer is not signed with an Apple Developer certificate, macOS will block it on first launch. To open it:
+
+1. **Right-click** (or Control-click) the app in Finder
+2. Select **Open** from the context menu
+3. Click **Open** in the confirmation dialog
+
+macOS will remember your choice and allow the app to run normally afterward.
+
+Alternatively, you can remove the quarantine attribute from the terminal:
+
+```bash
+xattr -cr /Applications/myWhisperer.app
+```
+
+### macOS: Self-Signing (Optional)
+
+If you prefer to self-sign the app to avoid Gatekeeper warnings entirely:
+
+```bash
+# Self-sign the application
+codesign --force --deep --sign - /Applications/myWhisperer.app
+
+# Verify the signature
+codesign --verify --verbose /Applications/myWhisperer.app
+```
+
+> **Note:** Self-signing removes the "unidentified developer" warning but does not replace a proper Apple Developer signature. The app is fully functional without signing.
 
 ## Getting Started
 
@@ -46,8 +88,8 @@ Download the latest release from [GitHub Releases](https://github.com/KunalGehlo
 2. Launch the app and open **Settings**.
 3. Enter your OpenAI API key in the API Configuration section.
 4. Choose your preferred recording mode (Toggle or Push-to-Talk) and hotkey.
-5. Press the hotkey to start recording. Speak naturally.
-6. Your transcription is formatted, copied, and pasted automatically.
+5. Press the hotkey (default: `Control+Space`) to start recording. Speak naturally.
+6. Your transcription appears with both the raw and formatted versions, and is automatically copied/pasted.
 
 ## Development Setup
 
@@ -106,11 +148,11 @@ All settings are accessible from the Settings panel inside the app:
 |---------|-------------|---------|
 | **API Key** | Your OpenAI API key | -- |
 | **Whisper Model** | Model used for transcription | `whisper-1` |
-| **GPT Model** | Model used for text formatting | `gpt-4` |
+| **GPT Model** | Model used for text formatting | `gpt-4.1` |
 | **Formatting Level** | GPT formatting intensity (0-100% slider) | 70% |
 | **Custom Format Prompt** | Override the level-based formatting with a custom prompt | -- |
 | **Recording Mode** | Toggle or Push-to-Talk | Toggle |
-| **Hotkey** | Global keyboard shortcut | `Cmd+Shift+Space` |
+| **Hotkey** | Global keyboard shortcut (customizable) | `Control+Space` |
 | **Language** | Transcription language (20+ presets, auto-detect default) | Auto-detect |
 | **Theme** | Light, Dark, or System | System |
 | **Audio Input** | Microphone device | System default |
@@ -224,3 +266,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 - [OpenAI](https://openai.com/) for the Whisper and GPT APIs
 - Inspired by [Wispr Flow](https://wisprflow.ai)
+
+---
+
+<sub>**myWhisperer** is a free, open-source voice-to-text application, speech-to-text transcription tool, and AI-powered dictation software for macOS, Windows, and Linux. It serves as a free alternative to Wispr Flow, Otter.ai, Dragon NaturallySpeaking, and other paid dictation services. Keywords: free transcription app, voice to text, speech to text, dictation software, AI transcription, whisper transcription, open source dictation, desktop transcription tool, offline voice recognition, GPT text formatting.</sub>
