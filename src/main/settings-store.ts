@@ -20,6 +20,7 @@ interface AppSettings {
   audioInputDevice: string;
   personalDictionary: string[];
   formatPrompt: string;
+  gptFormattingLevel: number;
 }
 
 interface TranscriptionResult {
@@ -44,7 +45,7 @@ const defaultSettings: AppSettings = {
   whisperModel: 'whisper-1',
   gptModel: 'gpt-4',
   language: 'auto',
-  hotkey: 'CommandOrControl+Shift+Space',
+  hotkey: 'Control+Space',
   theme: 'system',
   autoPaste: true,
   autoCopy: true,
@@ -52,6 +53,7 @@ const defaultSettings: AppSettings = {
   audioInputDevice: 'default',
   personalDictionary: [],
   formatPrompt: '',
+  gptFormattingLevel: 70,
 };
 
 /** Manages application settings and transcription history with encrypted API key storage. */
@@ -71,7 +73,8 @@ class SettingsStore {
 
   /** Returns current application settings, decrypting the API key if safeStorage is available. */
   get(): AppSettings {
-    const settings = this.store.get('settings') as StoreSchema['settings'];
+    const stored = this.store.get('settings') as Partial<StoreSchema['settings']>;
+    const settings = { ...defaultSettings, ...stored };
     return {
       ...settings,
       apiKey: this.decryptApiKey(settings.apiKey),

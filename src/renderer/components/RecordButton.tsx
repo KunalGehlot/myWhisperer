@@ -8,6 +8,7 @@ interface RecordButtonProps {
   duration: number;
   audioLevel: number;
   statusMessage: string;
+  recordingMode: 'toggle' | 'push-to-talk';
   onStart: () => void;
   onStop: () => void;
 }
@@ -31,6 +32,7 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
   duration,
   audioLevel,
   statusMessage,
+  recordingMode,
   onStart,
   onStop,
 }) => {
@@ -99,7 +101,7 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
         )}
         {!isRecording && !isProcessing && (
           <span className="text-surface-400 dark:text-surface-500 text-sm">
-            Tap to record
+            {recordingMode === 'push-to-talk' ? 'Hold hotkey to record' : 'Tap to record'}
           </span>
         )}
       </div>

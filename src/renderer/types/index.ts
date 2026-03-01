@@ -21,6 +21,7 @@ export interface AppSettings {
   audioInputDevice: string;
   personalDictionary: string[];
   formatPrompt: string;
+  gptFormattingLevel: number;
 }
 
 export interface ProcessingState {
@@ -30,11 +31,18 @@ export interface ProcessingState {
 }
 
 export type GPTModel =
-  | 'gpt-4'
-  | 'gpt-4-turbo'
+  | 'gpt-4.1'
+  | 'gpt-4.1-mini'
+  | 'gpt-4.1-nano'
   | 'gpt-4o'
   | 'gpt-4o-mini'
-  | 'gpt-3.5-turbo';
+  | 'o4-mini'
+  | 'o3'
+  | 'o3-mini'
+  | 'o1'
+  | 'o1-mini'
+  | 'gpt-4-turbo'
+  | 'gpt-4';
 
 export interface AudioDevice {
   deviceId: string;
@@ -52,6 +60,8 @@ export interface ElectronAPI {
   copyToClipboard: (text: string) => Promise<void>;
   pasteText: (text: string) => Promise<void>;
   onRecordingToggle: (callback: () => void) => () => void;
+  onRecordingStart: (callback: () => void) => () => void;
+  onRecordingStop: (callback: () => void) => () => void;
   onSettingsChanged: (callback: (settings: AppSettings) => void) => () => void;
   minimizeToTray: () => void;
   quitApp: () => void;

@@ -5,7 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - Unreleased
+## [0.2.0] - 2026-03-01
+
+### Added
+
+- Push-to-talk recording mode with configurable hotkey (default: Control+Space)
+- Context-aware smart formatting (detects active application for intelligent formatting)
+- GPT formatting level slider (0-100%) with tiered prompts (Light / Moderate / Full)
+- Active window context detection for macOS, Windows, and Linux
+- CI/CD release pipeline (auto-build and publish on push to broad branch)
+- GitHub Releases with platform-specific installers (DMG, EXE, AppImage, DEB)
+- macOS notarization support (when Apple credentials are configured)
+- Unit test framework (Vitest with React Testing Library)
+- NSMicrophoneUsageDescription for macOS app permission prompt
+- App icons for all platforms (icns, ico, png)
+- Icon generation script (scripts/generate-icons.js)
+
+### Changed
+
+- Upgraded Electron from v33 to v35+ (security fixes)
+- Upgraded electron-builder from v25 to v26+ (tar vulnerability fixes)
+- Recording mode buttons are now fully interactive (push-to-talk enabled)
+- Default formatting level set to 70% (moderate formatting)
+- Default system prompt is now context-aware (adapts to email, chat, code, notes, etc.)
+
+### Fixed
+
+- Resolved ASAR integrity bypass vulnerability (GHSA-vmqv-hx8q-j7mg)
+- Resolved tar path traversal vulnerabilities (9 high severity)
+- 0 npm audit vulnerabilities
+
+## [0.1.0] - 2026-02-28
 
 ### Added
 
