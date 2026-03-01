@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-03-01
+
+### Fixed
+
+- **Critical: app crash on macOS** — `uiohook-napi` was imported at startup causing `SIGABRT` when Accessibility permissions were not granted. Now lazy-loaded only when push-to-talk mode is activated.
+- Push-to-talk gracefully falls back to toggle mode if `uiohook-napi` fails to initialize
+- Clear error message logged when Accessibility permissions are missing
+
 ## [0.2.1] - 2026-03-01
 
 ### Fixed

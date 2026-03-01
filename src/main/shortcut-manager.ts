@@ -1,10 +1,21 @@
 /**
  * Shortcut manager for myWhisperer.
  * Abstracts over Electron's globalShortcut (toggle mode) and uiohook-napi (push-to-talk mode).
+ * uiohook-napi is lazy-loaded only when push-to-talk is activated, because it requires
+ * macOS Accessibility permissions and will crash the app if loaded without them.
  */
 import { globalShortcut } from 'electron';
-import { uIOhook, UiohookKey } from 'uiohook-napi';
-import type { UiohookKeyboardEvent } from 'uiohook-napi';
+
+// Lazy-loaded uiohook references — only populated when push-to-talk is used
+let uIOhookModule: typeof import('uiohook-napi') | null = null;
+
+function getUiohook(): typeof import('uiohook-napi') {
+  if (!uIOhookModule) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    uIOhookModule = require('uiohook-napi');
+  }
+  return uIOhookModule!;
+}
 
 interface ShortcutCallbacks {
   onRecordingToggle: () => void;
@@ -17,6 +28,7 @@ interface ShortcutCallbacks {
  * Supports common keys used in keyboard shortcuts.
  */
 function electronKeyToUiohook(key: string): number | null {
+  const { UiohookKey } = getUiohook();
   const map: Record<string, number> = {
     space: UiohookKey.Space,
     enter: UiohookKey.Enter,
@@ -116,6 +128,9 @@ function parseAccelerator(accelerator: string): {
   };
 }
 
+// Use a generic type for event handlers since the module is lazy-loaded
+type KeyboardEventHandler = (e: { keycode: number; ctrlKey: boolean; altKey: boolean; shiftKey: boolean; metaKey: boolean }) => void;
+
 export class ShortcutManager {
   private callbacks: ShortcutCallbacks;
   private currentHotkey: string | null = null;
@@ -123,8 +138,8 @@ export class ShortcutManager {
   private uiohookStarted = false;
   private isHeld = false;
 
-  private keydownHandler: ((e: UiohookKeyboardEvent) => void) | null = null;
-  private keyupHandler: ((e: UiohookKeyboardEvent) => void) | null = null;
+  private keydownHandler: KeyboardEventHandler | null = null;
+  private keyupHandler: KeyboardEventHandler | null = null;
 
   constructor(callbacks: ShortcutCallbacks) {
     this.callbacks = callbacks;
@@ -181,39 +196,52 @@ export class ShortcutManager {
   }
 
   private registerPushToTalk(hotkey: string): boolean {
-    const parsed = parseAccelerator(hotkey);
-    if (parsed.keycode === null) {
-      console.error('Could not parse hotkey for push-to-talk:', hotkey);
-      return false;
+    try {
+      const parsed = parseAccelerator(hotkey);
+      if (parsed.keycode === null) {
+        console.error('Could not parse hotkey for push-to-talk:', hotkey);
+        return false;
+      }
+
+      const { uIOhook } = getUiohook();
+
+      this.keydownHandler = (e) => {
+        if (this.isHeld) return; // Prevent repeat keydown events
+        if (this.matchesHotkey(e, parsed)) {
+          this.isHeld = true;
+          this.callbacks.onRecordingStart();
+        }
+      };
+
+      this.keyupHandler = (e) => {
+        if (!this.isHeld) return;
+        // Stop when the main key is released, or when a required modifier is released
+        if (this.isReleaseEvent(e, parsed)) {
+          this.isHeld = false;
+          this.callbacks.onRecordingStop();
+        }
+      };
+
+      uIOhook.on('keydown', this.keydownHandler);
+      uIOhook.on('keyup', this.keyupHandler);
+      this.startUiohook();
+
+      return true;
+    } catch (err) {
+      console.error(
+        'Failed to initialize push-to-talk. On macOS, ensure Accessibility permissions are granted in System Settings > Privacy & Security > Accessibility.',
+        err
+      );
+      // Fall back to toggle mode so the app remains usable
+      console.warn('Falling back to toggle mode.');
+      this.currentMode = 'toggle';
+      return this.registerToggle(hotkey);
     }
-
-    this.keydownHandler = (e: UiohookKeyboardEvent) => {
-      if (this.isHeld) return; // Prevent repeat keydown events
-      if (this.matchesHotkey(e, parsed)) {
-        this.isHeld = true;
-        this.callbacks.onRecordingStart();
-      }
-    };
-
-    this.keyupHandler = (e: UiohookKeyboardEvent) => {
-      if (!this.isHeld) return;
-      // Stop when the main key is released, or when a required modifier is released
-      if (this.isReleaseEvent(e, parsed)) {
-        this.isHeld = false;
-        this.callbacks.onRecordingStop();
-      }
-    };
-
-    uIOhook.on('keydown', this.keydownHandler);
-    uIOhook.on('keyup', this.keyupHandler);
-    this.startUiohook();
-
-    return true;
   }
 
   /** Checks if a keyboard event matches the configured hotkey (modifiers + main key). */
   private matchesHotkey(
-    e: UiohookKeyboardEvent,
+    e: { keycode: number; ctrlKey: boolean; altKey: boolean; shiftKey: boolean; metaKey: boolean },
     parsed: ReturnType<typeof parseAccelerator>
   ): boolean {
     return (
@@ -227,7 +255,7 @@ export class ShortcutManager {
 
   /** Checks if a keyup event means the hotkey combo is no longer held. */
   private isReleaseEvent(
-    e: UiohookKeyboardEvent,
+    e: { keycode: number; ctrlKey: boolean; altKey: boolean; shiftKey: boolean; metaKey: boolean },
     parsed: ReturnType<typeof parseAccelerator>
   ): boolean {
     // Main key released
@@ -241,27 +269,34 @@ export class ShortcutManager {
   }
 
   private removeUiohookListeners(): void {
-    if (this.keydownHandler) {
-      uIOhook.removeListener('keydown', this.keydownHandler);
-      this.keydownHandler = null;
-    }
-    if (this.keyupHandler) {
-      uIOhook.removeListener('keyup', this.keyupHandler);
-      this.keyupHandler = null;
+    if (uIOhookModule && (this.keydownHandler || this.keyupHandler)) {
+      const { uIOhook } = uIOhookModule;
+      if (this.keydownHandler) {
+        uIOhook.removeListener('keydown', this.keydownHandler);
+        this.keydownHandler = null;
+      }
+      if (this.keyupHandler) {
+        uIOhook.removeListener('keyup', this.keyupHandler);
+        this.keyupHandler = null;
+      }
     }
   }
 
   private startUiohook(): void {
-    if (!this.uiohookStarted) {
-      uIOhook.start();
-      this.uiohookStarted = true;
+    if (!this.uiohookStarted && uIOhookModule) {
+      try {
+        uIOhookModule.uIOhook.start();
+        this.uiohookStarted = true;
+      } catch (err) {
+        console.error('Failed to start uiohook:', err);
+      }
     }
   }
 
   private stopUiohook(): void {
-    if (this.uiohookStarted) {
+    if (this.uiohookStarted && uIOhookModule) {
       try {
-        uIOhook.stop();
+        uIOhookModule.uIOhook.stop();
       } catch {
         // May already be stopped
       }
