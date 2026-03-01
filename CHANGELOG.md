@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-03-01
+
+### Fixed
+
+- **Critical: app crash on macOS** — completely removed `uiohook-napi` native module which caused `SIGABRT` crash on launch (native addon incompatible with packaged Electron app)
+- Push-to-talk now uses Electron's built-in `globalShortcut` with key-repeat debounce detection — no native dependencies required
+- Eliminated all native binary dependencies for maximum cross-platform reliability
+
 ## [0.2.2] - 2026-03-01
 
 ### Fixed
