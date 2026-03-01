@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-03-01
+
+### Fixed
+
+- Hotkey capture now uses window-level keyboard listener (reliable on macOS)
+- Record button properly centered with overflow-safe container
+- Always show both Original and Formatted transcription panels side-by-side
+- Added built-in prompt viewer in Settings (collapsible, shows active prompt per level)
+- README: macOS Gatekeeper bypass and self-signing instructions
+- SEO: updated repo description, 17 GitHub topics, keyword-rich README
+
 ## [0.2.0] - 2026-03-01
 
 ### Added
