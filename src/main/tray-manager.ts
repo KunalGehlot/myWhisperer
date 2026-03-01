@@ -1,3 +1,7 @@
+/**
+ * Tray icon manager for myWhisperer.
+ * Provides system tray integration with context menu for quick access to app functions.
+ */
 import { Tray, Menu, nativeImage, BrowserWindow, app } from 'electron';
 
 const TRAY_ICON_DATA =
@@ -7,6 +11,7 @@ const TRAY_ICON_DATA =
   'VDFYMQMjIyMDsQYwQxWDBf9nYGBgYmBgYPj//z8TCwMDA8OoAQMOWBgZGRn+MzAw' +
   'MAAAAP//AwBXCi4x2mfsbQAAAABJRU5ErkJggg==';
 
+/** Manages the system tray icon, tooltip, and context menu for the application. */
 class TrayManager {
   private tray: Tray | null = null;
   private mainWindow: BrowserWindow;
@@ -16,6 +21,7 @@ class TrayManager {
     this.mainWindow = mainWindow;
   }
 
+  /** Creates the tray icon and sets up click behavior. */
   create(): void {
     const icon = nativeImage.createFromDataURL(TRAY_ICON_DATA);
     this.tray = new Tray(icon.resize({ width: 16, height: 16 }));
@@ -23,6 +29,7 @@ class TrayManager {
     this.updateContextMenu();
 
     this.tray.on('click', () => {
+      this.updateContextMenu();
       if (this.mainWindow.isVisible()) {
         this.mainWindow.hide();
       } else {
@@ -32,11 +39,13 @@ class TrayManager {
     });
   }
 
+  /** Updates the recording state and refreshes the context menu to reflect it. */
   setRecording(recording: boolean): void {
     this.isRecording = recording;
     this.updateContextMenu();
   }
 
+  /** Rebuilds the context menu with current window visibility and recording state. */
   private updateContextMenu(): void {
     if (!this.tray) return;
 
@@ -77,6 +86,7 @@ class TrayManager {
     this.tray.setContextMenu(menu);
   }
 
+  /** Destroys the tray icon and frees associated resources. */
   destroy(): void {
     if (this.tray) {
       this.tray.destroy();

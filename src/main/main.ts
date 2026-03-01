@@ -1,12 +1,18 @@
+/**
+ * Main process entry point for myWhisperer.
+ * Manages the application lifecycle, IPC handlers, global shortcuts, and tray integration.
+ */
 import {
   app,
   BrowserWindow,
   ipcMain,
   globalShortcut,
+  session,
+  systemPreferences,
 } from 'electron';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { SettingsStore } from './settings-store';
+import { SettingsStore, AppSettings } from './settings-store';
 import { WhisperService } from './whisper-service';
 import { GPTService } from './gpt-service';
 import { copyToClipboard, pasteToActiveApp } from './clipboard-manager';
@@ -15,6 +21,8 @@ import { TrayManager } from './tray-manager';
 let mainWindow: BrowserWindow | null = null;
 let trayManager: TrayManager | null = null;
 let isQuitting = false;
+let isRecording = false;
+let currentRegisteredShortcut: string | null = null;
 
 const settingsStore = new SettingsStore();
 const whisperService = new WhisperService();
@@ -22,6 +30,23 @@ const gptService = new GPTService();
 
 const isDev = !app.isPackaged;
 
+/** Allowed settings keys that can be saved via the settings:save IPC handler. */
+const ALLOWED_SETTINGS_KEYS: ReadonlySet<keyof AppSettings> = new Set([
+  'apiKey',
+  'whisperModel',
+  'gptModel',
+  'language',
+  'hotkey',
+  'theme',
+  'autoPaste',
+  'autoCopy',
+  'recordingMode',
+  'audioInputDevice',
+  'personalDictionary',
+  'formatPrompt',
+]);
+
+/** Creates the main application window with security-hardened web preferences. */
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 800,
@@ -30,7 +55,7 @@ function createWindow(): void {
     resizable: true,
     titleBarStyle: 'hidden',
     webPreferences: {
-      preload: path.join(__dirname, 'preload', 'preload.js'),
+      preload: path.join(__dirname, '..', 'preload', 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -40,7 +65,7 @@ function createWindow(): void {
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
   } else {
-    mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+    mainWindow.loadFile(path.join(app.getAppPath(), 'dist', 'renderer', 'index.html'));
   }
 
   mainWindow.once('ready-to-show', () => {
@@ -59,6 +84,7 @@ function createWindow(): void {
   });
 }
 
+/** Registers all IPC handlers for renderer-to-main communication. */
 function registerIpcHandlers(): void {
   ipcMain.handle('audio:process', async (_event, audioBuffer: ArrayBuffer) => {
     const settings = settingsStore.get();
@@ -118,8 +144,15 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle('settings:save', (_event, partial: Record<string, unknown>) => {
+    const sanitized: Record<string, unknown> = {};
+    for (const key of Object.keys(partial)) {
+      if (ALLOWED_SETTINGS_KEYS.has(key as keyof AppSettings)) {
+        sanitized[key] = partial[key];
+      }
+    }
+
     const oldSettings = settingsStore.get();
-    settingsStore.save(partial);
+    settingsStore.save(sanitized);
     const newSettings = settingsStore.get();
 
     if (oldSettings.hotkey !== newSettings.hotkey) {
@@ -153,6 +186,10 @@ function registerIpcHandlers(): void {
     return ['gpt-4', 'gpt-4-turbo', 'gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'];
   });
 
+  ipcMain.handle('app:platform', () => {
+    return process.platform;
+  });
+
   ipcMain.on('window:minimize-to-tray', () => {
     mainWindow?.hide();
   });
@@ -163,16 +200,26 @@ function registerIpcHandlers(): void {
   });
 }
 
+/**
+ * Registers a global keyboard shortcut for toggling recording.
+ * Unregisters only the previously registered shortcut rather than all shortcuts.
+ */
 function registerGlobalShortcut(hotkey: string): void {
-  globalShortcut.unregisterAll();
+  if (currentRegisteredShortcut) {
+    globalShortcut.unregister(currentRegisteredShortcut);
+    currentRegisteredShortcut = null;
+  }
 
   try {
     const registered = globalShortcut.register(hotkey, () => {
+      isRecording = !isRecording;
+      trayManager?.setRecording(isRecording);
       mainWindow?.webContents.send('recording:toggle');
-      trayManager?.setRecording(true);
     });
 
-    if (!registered) {
+    if (registered) {
+      currentRegisteredShortcut = hotkey;
+    } else {
       console.error('Failed to register global shortcut:', hotkey);
     }
   } catch (err) {
@@ -193,7 +240,22 @@ if (!gotLock) {
     }
   });
 
-  app.on('ready', () => {
+  app.whenReady().then(async () => {
+    if (process.platform === 'darwin') {
+      await systemPreferences.askForMediaAccess('microphone');
+    }
+
+    if (!isDev) {
+      session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+        callback({
+          responseHeaders: {
+            ...details.responseHeaders,
+            'Content-Security-Policy': ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"],
+          },
+        });
+      });
+    }
+
     createWindow();
     registerIpcHandlers();
 

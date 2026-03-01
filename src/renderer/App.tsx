@@ -1,3 +1,4 @@
+/** Root application component that manages views, recording, and transcription processing. */
 import React, { useState, useEffect, useCallback } from 'react';
 import type { TranscriptionResult, ProcessingState } from './types';
 import { useSettings } from './hooks/useSettings';
@@ -7,33 +8,21 @@ import { TranscriptionPanel } from './components/TranscriptionPanel';
 import { SettingsPanel } from './components/SettingsPanel';
 import { HistoryPanel } from './components/HistoryPanel';
 import { StatusBar } from './components/StatusBar';
+import { ToastProvider, useToast } from './components/Toast';
+import { MicIcon, SettingsIcon, HistoryIcon, AlertIcon } from './components/Icons';
 
 type View = 'main' | 'settings' | 'history';
 
 const MicTabIcon: React.FC<{ active: boolean }> = ({ active }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
-    <rect x="9" y="1" width="6" height="12" rx="3" />
-    <path d="M5 10a7 7 0 0 0 14 0" />
-    <line x1="12" y1="17" x2="12" y2="21" />
-    <line x1="8" y1="21" x2="16" y2="21" />
-  </svg>
+  <MicIcon className={`w-[18px] h-[18px] ${active ? 'stroke-[2.5]' : 'stroke-2'}`} />
 );
 
 const SettingsTabIcon: React.FC<{ active: boolean }> = ({ active }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-  </svg>
+  <SettingsIcon className={`w-[18px] h-[18px] ${active ? 'stroke-[2.5]' : 'stroke-2'}`} />
 );
 
 const HistoryTabIcon: React.FC<{ active: boolean }> = ({ active }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <path d="M12 6v6l4 2" />
-  </svg>
+  <HistoryIcon className={`w-[18px] h-[18px] ${active ? 'stroke-[2.5]' : 'stroke-2'}`} />
 );
 
 function applyTheme(theme: 'light' | 'dark' | 'system') {
@@ -48,20 +37,21 @@ function applyTheme(theme: 'light' | 'dark' | 'system') {
   }
 }
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('main');
   const [latestResult, setLatestResult] = useState<TranscriptionResult | null>(null);
   const [processing, setProcessing] = useState<ProcessingState>({
-    isTranscribing: false,
-    isFormatting: false,
+    isProcessing: false,
     progress: 0,
     statusMessage: '',
   });
+  const [historyRefresh, setHistoryRefresh] = useState(0);
 
   const { settings, updateSettings, loaded } = useSettings();
   const { isRecording, duration, audioLevel, startRecording, stopRecording } = useAudioRecorder();
+  const { showToast } = useToast();
 
-  const isProcessing = processing.isTranscribing || processing.isFormatting;
+  const isProcessing = processing.isProcessing;
 
   // Apply theme
   useEffect(() => {
@@ -78,51 +68,43 @@ const App: React.FC = () => {
     try {
       await startRecording(settings.audioInputDevice);
     } catch (err) {
-      console.error('Failed to start recording:', err);
+      const message = err instanceof Error && err.name === 'NotAllowedError'
+        ? 'Microphone access denied'
+        : 'Recording failed';
+      showToast(message, 'error');
     }
-  }, [startRecording, settings.audioInputDevice]);
+  }, [startRecording, settings.audioInputDevice, showToast]);
 
   const handleStopRecording = useCallback(async () => {
     setProcessing({
-      isTranscribing: true,
-      isFormatting: false,
-      progress: 30,
-      statusMessage: 'Transcribing audio...',
+      isProcessing: true,
+      progress: 50,
+      statusMessage: 'Processing audio...',
     });
 
     try {
       const blob = await stopRecording();
       if (!blob) {
-        setProcessing({ isTranscribing: false, isFormatting: false, progress: 0, statusMessage: '' });
+        setProcessing({ isProcessing: false, progress: 0, statusMessage: '' });
         return;
       }
-
-      setProcessing({
-        isTranscribing: false,
-        isFormatting: true,
-        progress: 70,
-        statusMessage: 'Formatting text...',
-      });
 
       const buffer = await blob.arrayBuffer();
       const result = await window.electronAPI.sendAudio(buffer);
 
       setLatestResult(result);
+      setHistoryRefresh((n) => n + 1);
 
-      if (settings.autoCopy) {
-        await window.electronAPI.copyToClipboard(result.formattedText);
-      }
-      if (settings.autoPaste) {
-        await window.electronAPI.pasteText(result.formattedText);
-      }
+      // Auto-copy/paste is handled by the main process in audio:process
     } catch (err) {
-      console.error('Transcription failed:', err);
+      const detail = err instanceof Error ? err.message : 'Unknown error';
+      showToast(`Transcription failed: ${detail}`, 'error');
     } finally {
-      setProcessing({ isTranscribing: false, isFormatting: false, progress: 0, statusMessage: '' });
+      setProcessing({ isProcessing: false, progress: 0, statusMessage: '' });
     }
-  }, [stopRecording, settings.autoCopy, settings.autoPaste]);
+  }, [stopRecording, showToast]);
 
-  // Listen for hotkey recording toggle from main process
+  // Listen for hotkey recording toggle from main process (toggle mode only)
   useEffect(() => {
     const unsub = window.electronAPI.onRecordingToggle(() => {
       if (isProcessing) return;
@@ -149,10 +131,12 @@ const App: React.FC = () => {
     { id: 'settings', label: 'Settings', icon: SettingsTabIcon },
   ];
 
+  const showApiKeyBanner = currentView === 'main' && !settings.apiKey;
+
   return (
     <div className="h-screen flex flex-col bg-white dark:bg-surface-900 text-surface-900 dark:text-surface-50">
       {/* Titlebar */}
-      <div className="titlebar flex items-center justify-between px-4 py-2 bg-surface-50 dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700">
+      <div className="titlebar select-none flex items-center justify-between px-4 py-2 bg-surface-50 dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700">
         <span className="text-sm font-semibold text-surface-700 dark:text-surface-200 tracking-tight">
           myWhisperer
         </span>
@@ -204,6 +188,24 @@ const App: React.FC = () => {
       <div className="flex-1 overflow-hidden">
         {currentView === 'main' && (
           <div className="h-full flex flex-col items-center justify-center gap-8 px-4">
+            {showApiKeyBanner && (
+              <div className="w-full max-w-lg mx-auto">
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+                  <AlertIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                      Configure your OpenAI API key in Settings to get started
+                    </p>
+                    <button
+                      onClick={() => setCurrentView('settings')}
+                      className="mt-2 text-xs font-medium text-yellow-700 dark:text-yellow-300 underline hover:no-underline"
+                    >
+                      Go to Settings
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             <RecordButton
               isRecording={isRecording}
               isProcessing={isProcessing}
@@ -219,7 +221,7 @@ const App: React.FC = () => {
         {currentView === 'settings' && (
           <SettingsPanel settings={settings} onSave={updateSettings} />
         )}
-        {currentView === 'history' && <HistoryPanel />}
+        {currentView === 'history' && <HistoryPanel refreshTrigger={historyRefresh} />}
       </div>
 
       {/* Status bar */}
@@ -227,5 +229,12 @@ const App: React.FC = () => {
     </div>
   );
 };
+
+/** Application root that wraps content with the Toast notification provider. */
+const App: React.FC = () => (
+  <ToastProvider>
+    <AppContent />
+  </ToastProvider>
+);
 
 export default App;

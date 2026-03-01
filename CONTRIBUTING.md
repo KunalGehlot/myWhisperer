@@ -28,8 +28,8 @@ Thank you for your interest in contributing to myWhisperer. This document provid
 - Run `npm run dev` to start both the Vite renderer dev server and the Electron main process with file watching.
 - The renderer supports hot module replacement. Changes to files in `src/renderer/` will reflect immediately.
 - Changes to main process files (`src/main/`) require restarting the Electron process.
-- Run `npm run lint` to check for linting errors before committing.
 - Run `npm run typecheck` to verify TypeScript types.
+- Run `npm run build` to create a production build.
 
 ## Code Style
 
@@ -56,7 +56,6 @@ Write clear, descriptive commit messages. Use the imperative mood in the subject
    ```
 2. Make sure all checks pass:
    ```bash
-   npm run lint
    npm run typecheck
    npm run build
    ```

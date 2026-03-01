@@ -1,3 +1,4 @@
+/** Status bar showing API key status, model info, and recording mode. */
 import React from 'react';
 import type { AppSettings } from '../types';
 
@@ -15,16 +16,16 @@ export const StatusBar: React.FC<StatusBarProps> = ({ settings, isRecording }) =
         <span className="flex items-center gap-1.5">
           <span
             className={`w-1.5 h-1.5 rounded-full ${
-              hasApiKey ? 'bg-green-500' : 'bg-surface-400'
+              hasApiKey ? 'bg-yellow-500' : 'bg-surface-400'
             }`}
           />
-          {hasApiKey ? 'API Connected' : 'No API Key'}
+          {hasApiKey ? 'API Key Set' : 'No API Key'}
         </span>
         <span className="text-surface-300 dark:text-surface-600">|</span>
         <span>{settings.gptModel}</span>
       </div>
       <div className="flex items-center gap-3">
-        <span className="capitalize">{settings.recordingMode.replace('-', ' ')}</span>
+        <span className="capitalize">{settings.recordingMode.replace(/-/g, ' ')}</span>
         {isRecording && (
           <>
             <span className="text-surface-300 dark:text-surface-600">|</span>
