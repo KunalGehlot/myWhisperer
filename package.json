@@ -3,7 +3,10 @@
   "version": "0.2.0",
   "description": "Open-source voice-to-text desktop application powered by OpenAI Whisper and GPT",
   "main": "dist/main/main/main.js",
-  "author": "Kunal Gehlot",
+  "author": {
+    "name": "Kunal Gehlot",
+    "email": "kunal@kunalgehlot.in"
+  },
   "license": "MIT",
   "homepage": "https://github.com/KunalGehlot/myWhisperer",
   "repository": {
