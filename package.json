@@ -1,6 +1,6 @@
 {
   "name": "my-whisperer",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Open-source voice-to-text desktop application powered by OpenAI Whisper and GPT",
   "main": "dist/main/main/main.js",
   "author": {
@@ -36,8 +36,7 @@
     "electron-store": "^8.2.0",
     "openai": "^4.73.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "uiohook-napi": "^1.5.4"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -68,9 +67,6 @@
     "files": [
       "dist/**/*",
       "resources/**/*"
-    ],
-    "asarUnpack": [
-      "node_modules/uiohook-napi/**"
     ],
     "publish": [
       {

@@ -216,7 +216,6 @@ myWhisperer follows standard Electron architecture with a clear separation betwe
 | AI | [OpenAI SDK](https://github.com/openai/openai-node) 4.x |
 | Storage | [electron-store](https://github.com/sindresorhus/electron-store) 8 |
 | Packaging | [electron-builder](https://www.electron.build/) 26 |
-| Input hooks | [uiohook-napi](https://github.com/SergioBeworworked/uiohook-napi) (push-to-talk) |
 
 ### Project Structure
 
