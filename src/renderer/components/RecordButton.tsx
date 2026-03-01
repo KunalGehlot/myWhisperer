@@ -49,7 +49,7 @@ export const RecordButton: React.FC<RecordButtonProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="relative flex items-center justify-center">
+      <div className="relative flex items-center justify-center w-48 h-48 overflow-visible">
         {isRecording && (
           <div
             className="absolute w-36 h-36 rounded-full bg-red-500/20 transition-transform duration-100"

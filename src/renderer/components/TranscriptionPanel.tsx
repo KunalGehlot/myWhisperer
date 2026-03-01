@@ -41,37 +41,6 @@ export const TranscriptionPanel: React.FC<TranscriptionPanelProps> = ({ result }
     await window.electronAPI.pasteText(result.formattedText);
   };
 
-  const hasFormatting = result.rawText !== result.formattedText;
-
-  if (!hasFormatting) {
-    return (
-      <div className="h-full animate-fade-in">
-        <div className="h-full rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 shadow-sm flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface-100 dark:border-surface-700/50 bg-surface-50/50 dark:bg-surface-800/50">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-surface-400 dark:text-surface-500">
-              Transcription
-            </h4>
-            <div className="flex items-center gap-1.5">
-              <ActionButton onClick={() => handleCopy(result.formattedText, 'formatted')} label="Copy to clipboard">
-                <CopyIcon />
-                {copied === 'formatted' ? 'Copied!' : 'Copy'}
-              </ActionButton>
-              <ActionButton onClick={handlePaste} variant="primary" label="Paste to active app">
-                <PasteIcon />
-                Paste
-              </ActionButton>
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <p className="text-sm text-surface-800 dark:text-surface-100 leading-relaxed whitespace-pre-wrap user-select-text">
-              {result.formattedText}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full animate-fade-in">
       <div className="h-full flex gap-3">

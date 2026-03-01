@@ -49,6 +49,74 @@ const GPT_MODELS = [
 
 const GPT_MODEL_VALUES = GPT_MODELS.map((m) => m.value);
 
+const BUILTIN_PROMPTS: Record<string, string> = {
+  light: `You are a minimal text editor. Take the raw speech transcription and make only essential corrections:
+- Fix capitalization at the beginning of sentences
+- Remove filler words (um, uh, like, you know, so basically, etc.)
+- Fix obvious typos and misspellings
+- Add basic punctuation (periods at sentence ends, commas for natural pauses)
+Do NOT restructure sentences, change word choices, or rewrite anything. Preserve the speaker's exact phrasing and sentence structure.
+If custom terminology is provided, use those exact spellings.
+Output ONLY the corrected text with no explanations.`,
+  moderate: `You are a text editor. Take the raw speech transcription and clean it up:
+- Fix grammar, punctuation, and capitalization
+- Remove filler words (um, uh, like, you know, so basically, etc.)
+- Fix spelling errors and typos
+- Lightly improve sentence flow where needed, but keep the speaker's original sentence structure and word choices where possible
+- Do not heavily rewrite, restructure paragraphs, or change the tone
+If custom terminology is provided, use those exact spellings.
+Output ONLY the formatted text with no explanations.`,
+  full: `You are an intelligent voice-to-text assistant integrated into a desktop application.
+You receive two inputs: (1) raw speech transcription and (2) context about where the user is currently typing (application name and window title).
+
+Your job is to format the transcription appropriately based on the context:
+
+Context-Aware Formatting Rules:
+
+- Email clients (Mail, Outlook, Gmail, Thunderbird, Spark, Airmail, etc.):
+  Format as a professional email. Add appropriate greeting and sign-off if missing. Use proper email paragraph structure. Keep tone professional but warm.
+
+- Chat/messaging apps (Slack, Discord, Teams, WhatsApp, Telegram, iMessage, Signal, etc.):
+  Keep it casual and conversational. Short sentences. No formal structure needed. Preserve the speaker's natural tone. Light punctuation only.
+
+- Note-taking apps (Notion, Obsidian, Apple Notes, OneNote, Bear, Evernote, Craft, Joplin, etc.):
+  Format as clean, organized notes. Use bullet points for lists. Add markdown headers if the content covers multiple distinct topics. Be concise and scannable.
+
+- Document editors (Word, Google Docs, Pages, LibreOffice Writer, TextEdit, Scrivener, etc.):
+  Format as polished prose. Full sentences, proper paragraphs. Professional writing style with clear structure and logical flow.
+
+- Code editors/IDEs (VS Code, IntelliJ, Xcode, Vim, Neovim, Sublime Text, Cursor, Zed, etc.):
+  Format as code comments (// or # depending on file type). If the speech describes code logic, attempt to write the actual code. Keep it precise and technical.
+
+- Spreadsheet apps (Excel, Google Sheets, Numbers, LibreOffice Calc):
+  Format as comma-separated or tab-separated values if the content sounds like data entries. Otherwise, format as concise cell-appropriate text.
+
+- Presentation apps (PowerPoint, Keynote, Google Slides, LibreOffice Impress):
+  Format as concise bullet points suitable for slides. Short phrases, not full sentences. Focus on key points.
+
+- Terminal/CLI (Terminal, iTerm, Command Prompt, PowerShell, Warp, Alacritty, Kitty, etc.):
+  If the speech describes a command, output the actual shell command. Otherwise, format as a brief technical comment prefixed with #.
+
+- Social media (Twitter/X, LinkedIn, Facebook, Reddit, Instagram, Threads, Mastodon, etc.):
+  Match the platform's tone and conventions. Keep within character limits. Casual but clear. Use hashtags if appropriate.
+
+- Search bars / Browsers (Chrome, Safari, Firefox, Arc, Edge, Brave, Opera, etc.):
+  Format as a search query — concise keywords, no full sentences, no punctuation.
+
+- Task/project management (Jira, Linear, Asana, Trello, Monday, Todoist, Things, etc.):
+  Format as a clear, actionable task description or comment. Concise language with relevant context.
+
+- Unknown/Other applications:
+  Default to clean, professional prose. Fix grammar, punctuation, capitalization. Remove filler words. Maintain original meaning.
+
+General Rules (always apply):
+- Remove filler words (um, uh, like, you know, so basically, I mean, sort of, kind of, etc.)
+- Fix grammar, spelling, and punctuation
+- If custom terminology/dictionary is provided, use those exact spellings
+- Preserve the speaker's original meaning, intent, and key information
+- Output ONLY the formatted text — no explanations, labels, preambles, or metadata`,
+};
+
 const inputClass =
   'w-full px-3 py-2 rounded-lg border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors';
 
@@ -76,6 +144,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
   const [customModel, setCustomModel] = useState('');
   const [useCustomModel, setUseCustomModel] = useState(false);
   const [isCapturingHotkey, setIsCapturingHotkey] = useState(false);
+  const [showDefaultPrompt, setShowDefaultPrompt] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -131,43 +200,52 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
     update({ personalDictionary: local.personalDictionary.filter((w) => w !== word) });
   };
 
-  const handleHotkeyCapture = (e: React.KeyboardEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // Use window-level keydown listener for reliable hotkey capture (especially on macOS)
+  useEffect(() => {
+    if (!isCapturingHotkey) return;
 
-    if (e.key === 'Escape') {
+    const handler = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      if (e.key === 'Escape') {
+        setIsCapturingHotkey(false);
+        return;
+      }
+
+      // Ignore modifier-only presses
+      if (['Meta', 'Control', 'Alt', 'Shift', 'OS'].includes(e.key)) return;
+
+      const parts: string[] = [];
+      if (e.ctrlKey) parts.push('Control');
+      if (e.metaKey) parts.push('Command');
+      if (e.altKey) parts.push('Alt');
+      if (e.shiftKey) parts.push('Shift');
+
+      // Map key names to Electron accelerator format
+      let key = e.key;
+      if (key === ' ') key = 'Space';
+      else if (key.length === 1) key = key.toUpperCase();
+      else if (key === 'ArrowUp') key = 'Up';
+      else if (key === 'ArrowDown') key = 'Down';
+      else if (key === 'ArrowLeft') key = 'Left';
+      else if (key === 'ArrowRight') key = 'Right';
+      else if (key === 'Enter') key = 'Return';
+      else if (key === 'Backspace') key = 'Backspace';
+      else if (key === 'Delete') key = 'Delete';
+      else if (key === 'Tab') key = 'Tab';
+
+      parts.push(key);
+
+      const accelerator = parts.join('+');
+      update({ hotkey: accelerator });
       setIsCapturingHotkey(false);
-      return;
-    }
+    };
 
-    // Ignore modifier-only presses
-    if (['Meta', 'Control', 'Alt', 'Shift', 'OS'].includes(e.key)) return;
-
-    const parts: string[] = [];
-    if (e.ctrlKey) parts.push('Control');
-    if (e.metaKey) parts.push('Command');
-    if (e.altKey) parts.push('Alt');
-    if (e.shiftKey) parts.push('Shift');
-
-    // Map key names to Electron accelerator format
-    let key = e.key;
-    if (key === ' ') key = 'Space';
-    else if (key.length === 1) key = key.toUpperCase();
-    else if (key === 'ArrowUp') key = 'Up';
-    else if (key === 'ArrowDown') key = 'Down';
-    else if (key === 'ArrowLeft') key = 'Left';
-    else if (key === 'ArrowRight') key = 'Right';
-    else if (key === 'Enter') key = 'Return';
-    else if (key === 'Backspace') key = 'Backspace';
-    else if (key === 'Delete') key = 'Delete';
-    else if (key === 'Tab') key = 'Tab';
-
-    parts.push(key);
-
-    const accelerator = parts.join('+');
-    update({ hotkey: accelerator });
-    setIsCapturingHotkey(false);
-  };
+    window.addEventListener('keydown', handler, true);
+    return () => window.removeEventListener('keydown', handler, true);
+  }, [isCapturingHotkey]);
 
   const formattingLabel =
     local.gptFormattingLevel === 0
@@ -307,14 +385,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
               tabIndex={0}
               onClick={() => setIsCapturingHotkey(true)}
               onKeyDown={(e) => {
-                if (isCapturingHotkey) {
-                  handleHotkeyCapture(e);
-                } else if (e.key === 'Enter' || e.key === ' ') {
+                if (!isCapturingHotkey && (e.key === 'Enter' || e.key === ' ')) {
                   e.preventDefault();
                   setIsCapturingHotkey(true);
                 }
               }}
-              onBlur={() => setIsCapturingHotkey(false)}
               className={`${inputClass} cursor-pointer select-none flex items-center justify-between ${
                 isCapturingHotkey ? 'ring-2 ring-primary-500 border-primary-500' : ''
               }`}
@@ -401,6 +476,34 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, onSave }
               When set, this overrides the level-based formatting above.
             </p>
           </div>
+          {local.gptFormattingLevel > 0 && !local.formatPrompt && (
+            <div>
+              <button
+                onClick={() => setShowDefaultPrompt(!showDefaultPrompt)}
+                className="text-xs text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+                type="button"
+              >
+                <svg
+                  width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  className={`transition-transform ${showDefaultPrompt ? 'rotate-90' : ''}`}
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+                {showDefaultPrompt ? 'Hide' : 'View'} active built-in prompt
+              </button>
+              {showDefaultPrompt && (
+                <div className="mt-2 p-3 rounded-lg bg-surface-50 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 max-h-64 overflow-y-auto">
+                  <pre className="text-xs text-surface-600 dark:text-surface-300 whitespace-pre-wrap font-mono leading-relaxed">
+                    {local.gptFormattingLevel <= 30
+                      ? BUILTIN_PROMPTS.light
+                      : local.gptFormattingLevel <= 70
+                        ? BUILTIN_PROMPTS.moderate
+                        : BUILTIN_PROMPTS.full}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
           <div>
             <Label>Personal Dictionary</Label>
             <div className="flex gap-2 mb-2">
