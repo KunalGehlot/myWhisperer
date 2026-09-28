@@ -60,6 +60,8 @@ open ~/Applications/myWhisperer.app
 ```
 
 > [!NOTE]
+> **Upgrading from 0.2.x?** Quit the old Electron app and delete `/Applications/myWhisperer.app` first. Both versions share the same app identity, so having both installed confuses macOS permissions and both would react to the hotkey.
+>
 > **On Windows or Linux?** Versions up to 0.2.3 were a cross-platform Electron app. Its installers are still on the [v0.2.3 release](https://github.com/KunalGehlot/myWhisperer/releases/tag/v0.2.3). From 0.3.0, myWhisperer is a native macOS app.
 
 A waveform icon appears in your menu bar and the welcome guide opens.
