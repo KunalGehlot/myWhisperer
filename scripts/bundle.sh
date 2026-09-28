@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Build myWhisperer, wrap it in a signed .app, and install it to ~/Applications.
+# Build OpenFlow, wrap it in a signed .app, and install it to ~/Applications.
 #
-# Usage: scripts/bundle.sh [debug|release]   (default: debug)
+# Usage: scripts/bundle.sh [debug|release]   (default: debug; release is universal)
 # Env:   SIGN_IDENTITY  codesign identity (default: first valid "Apple
 #                       Development" identity, else "-" for ad-hoc).
-#        INSTALL_DIR    where to put myWhisperer.app (default: ~/Applications).
+#        INSTALL_DIR    where to put OpenFlow.app (default: ~/Applications).
 #
 # With ad-hoc signing macOS forgets Accessibility grants on every rebuild; a
 # development certificate keeps them. The app is installed outside the
@@ -12,8 +12,8 @@
 set -euo pipefail
 
 CONFIG="${1:-debug}"
-NAME="myWhisperer"
-BUNDLE_ID="com.mywhisperer.app"
+NAME="OpenFlow"
+BUNDLE_ID="io.github.kunalgehlot.openflow"
 VERSION="0.3.0"
 BUILD_NUMBER="$(git -C "$(dirname "$0")/.." rev-list --count HEAD 2>/dev/null || echo 1)"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/Applications}"
@@ -27,15 +27,20 @@ if [[ -z "${SIGN_IDENTITY:-}" ]]; then
     SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 fi
 
-swift build -c "$CONFIG"
-BIN_DIR="$(swift build -c "$CONFIG" --show-bin-path)"
+# Release builds run on both Apple silicon and Intel Macs.
+ARCH_FLAGS=()
+if [[ "$CONFIG" == "release" ]]; then
+    ARCH_FLAGS=(--arch arm64 --arch x86_64)
+fi
+swift build -c "$CONFIG" "${ARCH_FLAGS[@]}"
+BIN_DIR="$(swift build -c "$CONFIG" "${ARCH_FLAGS[@]}" --show-bin-path)"
 
 mkdir -p "$INSTALL_DIR"
 APP="$INSTALL_DIR/$NAME.app"
 STAGING="$(mktemp -d)/$NAME.app"
 mkdir -p "$STAGING/Contents/MacOS" "$STAGING/Contents/Resources"
-cp "$BIN_DIR/MyWhisperer" "$STAGING/Contents/MacOS/$NAME"
-cp resources/icon.icns "$STAGING/Contents/Resources/AppIcon.icns"
+cp "$BIN_DIR/OpenFlow" "$STAGING/Contents/MacOS/$NAME"
+cp resources/AppIcon.icns "$STAGING/Contents/Resources/AppIcon.icns"
 
 cat > "$STAGING/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -60,7 +65,7 @@ cat > "$STAGING/Contents/Info.plist" <<PLIST
     <array>
         <dict>
             <key>CFBundleURLName</key><string>$BUNDLE_ID</string>
-            <key>CFBundleURLSchemes</key><array><string>mywhisperer</string></array>
+            <key>CFBundleURLSchemes</key><array><string>openflow</string></array>
         </dict>
     </array>
 </dict>

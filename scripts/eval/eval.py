@@ -2,7 +2,7 @@
 """Opt-in live evaluation of the dictation pipeline (costs a few cents).
 
 Generates spoken test clips with macOS text-to-speech (mixing English and
-German voices), runs each through `myWhisperer --dictate-file`, and prints the
+German voices), runs each through `OpenFlow --dictate-file`, and prints the
 raw transcript, the final text, latency, and what a good result looks like.
 
     scripts/eval/eval.py                 # all cases
@@ -81,7 +81,7 @@ def binary():
     # The installed app is signed with the same identity that saved the API
     # keys, so it can read them from the Keychain without prompting. Run
     # scripts/bundle.sh after code changes.
-    return os.path.expanduser("~/Applications/myWhisperer.app/Contents/MacOS/myWhisperer")
+    return os.path.expanduser("~/Applications/OpenFlow.app/Contents/MacOS/OpenFlow")
 
 
 def main():

@@ -1,8 +1,10 @@
 <div align="center">
 
-<img src="docs/images/hero.png" alt="myWhisperer home window with the dictation pill below it" width="820">
+<img src="resources/AppIcon.png" alt="OpenFlow icon" width="112">
 
-# myWhisperer
+# OpenFlow
+
+<img src="docs/images/hero.png" alt="OpenFlow home window with the dictation pill below it" width="820">
 
 **Open-source voice dictation for macOS. Hold a key, talk, and clean, well-formatted text appears in whatever app you're typing in.**
 
@@ -15,7 +17,7 @@
 
 ---
 
-myWhisperer is a free, open-source, native menu-bar app: an alternative to subscription dictation tools like Wispr Flow. It runs on your own API keys, so you pay the providers directly (about **$0.002 per dictation**), with no subscription, no account, and no telemetry.
+OpenFlow (formerly myWhisperer) is a free, open-source, native menu-bar app: an alternative to subscription dictation tools like Wispr Flow. It runs on your own API keys, so you pay the providers directly (about **$0.002 per dictation**), with no subscription, no account, and no telemetry.
 
 - **Works everywhere.** Slack, Mail, Notion, your browser, Xcode, VS Code, Cursor, the terminal: text goes wherever your cursor is.
 - **Cleans up as you talk.** It removes "um"s and "you know"s. It applies your corrections ("Tuesday, no wait, Wednesday" becomes "Wednesday"), adds punctuation, and turns spoken lists into real lists.
@@ -33,7 +35,7 @@ myWhisperer is a free, open-source, native menu-bar app: an alternative to subsc
 - [Requirements](#requirements)
 - [Install](#install)
 - [First run](#first-run)
-- [Using myWhisperer](#using-mywhisperer)
+- [Using OpenFlow](#using-openflow)
 - [Models, keys, and cost](#models-keys-and-cost)
 - [Privacy](#privacy)
 - [Troubleshooting](#troubleshooting)
@@ -45,26 +47,36 @@ myWhisperer is a free, open-source, native menu-bar app: an alternative to subsc
 | | |
 |---|---|
 | **macOS** | 14 Sonoma or later (Apple silicon or Intel) |
-| **Xcode** | 16 or later, the full Xcode app from the App Store, not just the Command Line Tools |
+| **Xcode** | Only to build from source: Xcode 16 or later, the full app from the App Store, not just the Command Line Tools |
 | **API keys** | [OpenAI](https://platform.openai.com/api-keys) (required, speech recognition) and [Anthropic](https://console.anthropic.com/settings/keys) (recommended, cleanup) |
 
 ## Install
 
-The native app is built from source for now; signed downloads are on the roadmap.
+> [!NOTE]
+> **Upgrading from myWhisperer 0.2.x?** Quit the old Electron app and delete `/Applications/myWhisperer.app`. Otherwise both apps respond to your hotkey.
+>
+> **On Windows or Linux?** Versions up to 0.2.3 were a cross-platform Electron app called myWhisperer. Its installers are still on the [v0.2.3 release](https://github.com/KunalGehlot/myWhisperer/releases/tag/v0.2.3). From 0.3.0 the app is OpenFlow, a native macOS app.
+
+### Download
+
+1. Download **`OpenFlow-<version>.zip`** from the [latest release](https://github.com/KunalGehlot/myWhisperer/releases/latest) and unzip it.
+2. Move **OpenFlow.app** to your Applications folder.
+3. OpenFlow isn't notarized by Apple yet, so macOS blocks it on first launch. Allow it once:
+   - open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to OpenFlow, or
+   - run `xattr -dr com.apple.quarantine /Applications/OpenFlow.app` in Terminal.
+
+Release builds are universal, so they run natively on Apple silicon and Intel Macs.
+
+### Build from source
 
 ```bash
 git clone https://github.com/KunalGehlot/myWhisperer.git
 cd myWhisperer
-scripts/bundle.sh                       # builds, signs, installs ~/Applications/myWhisperer.app
-open ~/Applications/myWhisperer.app
+scripts/bundle.sh                       # builds, signs, installs ~/Applications/OpenFlow.app
+open ~/Applications/OpenFlow.app
 ```
 
-> [!NOTE]
-> **Upgrading from 0.2.x?** Quit the old Electron app and delete `/Applications/myWhisperer.app` first. Both versions share the same app identity, so having both installed confuses macOS permissions and both would react to the hotkey.
->
-> **On Windows or Linux?** Versions up to 0.2.3 were a cross-platform Electron app. Its installers are still on the [v0.2.3 release](https://github.com/KunalGehlot/myWhisperer/releases/tag/v0.2.3). From 0.3.0, myWhisperer is a native macOS app.
-
-A waveform icon appears in your menu bar and the welcome guide opens.
+`scripts/package.sh` builds the universal release zip.
 
 > [!TIP]
 > **Sign with a free Apple Development certificate** so macOS keeps your permission grants when you rebuild. Without one, the app is signed ad hoc and macOS asks for Accessibility again after every build.
@@ -94,7 +106,7 @@ The welcome guide walks through everything in about a minute:
 |---|---|
 | <img src="docs/images/onboarding.png" alt="Welcome screen" width="420"> | <img src="docs/images/permissions.png" alt="Permissions step with live status" width="420"> |
 
-1. **Permissions.** myWhisperer needs two. Their status updates live as you grant them.
+1. **Permissions.** OpenFlow needs two. Their status updates live as you grant them.
    - **Microphone**, to hear you while you hold the key.
    - **Accessibility**, to detect the key, see which app you're in, and paste text.
 2. **API keys.** Paste your OpenAI and Anthropic keys. Each one is checked with a real request and stored in your macOS Keychain.
@@ -105,7 +117,7 @@ The welcome guide walks through everything in about a minute:
 > [!IMPORTANT]
 > If you use <kbd>fn</kbd>, set **System Settings → Keyboard → "Press 🌐 key to" → Do Nothing**. Otherwise macOS opens the emoji picker or switches keyboard layout every time you dictate.
 
-## Using myWhisperer
+## Using OpenFlow
 
 | Shortcut | What it does |
 |---|---|
@@ -118,7 +130,7 @@ The welcome guide walks through everything in about a minute:
 
 A small pill at the bottom of the screen shows what's happening. It never takes focus, so your text always lands where you were typing.
 
-**Styles.** myWhisperer sorts apps into *personal messages*, *work messages*, *email*, *code*, and *everything else*. Each gets a tone (formal, casual, very casual) and optional instructions of your own, such as "sign emails with 'Best, Alex'". Per-app rules under **Settings → Apps** can switch cleanup off, insert raw text, or turn dictation off entirely for a given app.
+**Styles.** OpenFlow sorts apps into *personal messages*, *work messages*, *email*, *code*, and *everything else*. Each gets a tone (formal, casual, very casual) and optional instructions of your own, such as "sign emails with 'Best, Alex'". Per-app rules under **Settings → Apps** can switch cleanup off, insert raw text, or turn dictation off entirely for a given app.
 
 **Dictionary and snippets.** Add names, jargon, and foreign words to the **Dictionary** so they're always spelled right. **Snippets** expand a spoken cue into stored text: say "my calendar link" and get your full URL. Snippets are matched exactly, never guessed by the AI.
 
@@ -146,11 +158,11 @@ flowchart LR
 | Speech to text | `gpt-transcribe` | `whisper-1`, `gpt-4o-transcribe`, `gpt-4o-mini-transcribe` |
 | Cleanup | `claude-haiku-4-5` | `claude-sonnet-5`, `claude-opus-5`, OpenAI `gpt-6-luna`, or off (raw text) |
 
-- **Languages.** Tell myWhisperer every language you speak, even just a few words of one. The default is English + German. Recognition is steered by these languages and by your dictionary, and nothing is ever translated.
+- **Languages.** Tell OpenFlow every language you speak, even just a few words of one. The default is English + German. Recognition is steered by these languages and by your dictionary, and nothing is ever translated.
 - **Speed.** Text usually appears about **1.5–1.8 s** after you release the key. If cleanup takes longer than the configured wait, the raw transcript is inserted instead, so you're never stuck.
 - **Cost.** At list prices a typical 7-second dictation costs about $0.002. **Settings → Usage & Costs** tracks estimated spend per provider and model, with a 30-day chart.
   - These are estimates. Your provider dashboards show exact billing.
-  - Prices were last checked on 28 Sep 2026 and are kept in [`Usage.swift`](Sources/MyWhispererCore/Models/Usage.swift).
+  - Prices were last checked on 28 Sep 2026 and are kept in [`Usage.swift`](Sources/OpenFlowCore/Models/Usage.swift).
 
 <div align="center">
 <img src="docs/images/usage.png" alt="Usage and costs pane" width="640">
@@ -161,7 +173,7 @@ flowchart LR
 - **Audio** is recorded only while you hold the key (or in hands-free mode), and is sent to OpenAI for transcription.
 - **Text** is sent to your cleanup provider: the transcript, the app's name and window title, the website's domain, and up to about 1,500 characters before and 300 after your cursor (plus any selection). Password fields are never read. Turn off **Privacy → Use the text around your cursor** to send only the transcript.
 - **API keys** live in your macOS Keychain.
-- **History, dictionary, snippets, and usage** stay on your Mac in `~/Library/Application Support/myWhisperer`. Set a retention period or delete everything from **Privacy & Permissions**.
+- **History, dictionary, snippets, and usage** stay on your Mac in `~/Library/Application Support/OpenFlow`. Set a retention period or delete everything from **Privacy & Permissions**.
 - No analytics and no telemetry. Nothing is sent anywhere except to the two providers you configured.
 
 ## Troubleshooting
@@ -184,14 +196,14 @@ System Settings → Keyboard → Dictation → **Shortcut**: choose anything oth
 - Check that the menu-bar icon doesn't show a warning badge, and look at **Settings → Privacy & Permissions**.
 - After granting Accessibility, macOS sometimes needs the app restarted before it passes keys through. Use the **Relaunch** button there.
 - If you rebuilt without a signing certificate, reset the stale grant and approve it again:
-  `tccutil reset Accessibility com.mywhisperer.app`.
+  `tccutil reset Accessibility io.github.kunalgehlot.openflow`.
 - Apps that turn on **Secure Keyboard Entry**, such as Terminal (Terminal → Secure Keyboard Entry) and some password managers, block all global hotkeys while they're in front.
 </details>
 
 <details>
 <summary><b>Nothing gets typed</b></summary>
 
-If no text field is focused, myWhisperer puts the text on your clipboard instead and says so; press <kbd>⌘</kbd><kbd>V</kbd> where you want it. Every dictation is also saved in **History**, and <kbd>⌃</kbd><kbd>⌘</kbd><kbd>V</kbd> pastes the last one again, so nothing is lost.
+If no text field is focused, OpenFlow puts the text on your clipboard instead and says so; press <kbd>⌘</kbd><kbd>V</kbd> where you want it. Every dictation is also saved in **History**, and <kbd>⌃</kbd><kbd>⌘</kbd><kbd>V</kbd> pastes the last one again, so nothing is lost.
 </details>
 
 <details>
@@ -203,35 +215,35 @@ Bluetooth headsets switch to a low-quality mode while their microphone is in use
 ## Development
 
 ```
-Sources/MyWhispererCore/   UI-free logic: prompts, providers, pipeline, dictation state machine (Swift 6)
-Sources/MyWhisperer/       AppKit/SwiftUI app: hotkey tap, audio, Accessibility, HUD, windows
-Tests/MyWhispererCoreTests Unit tests (Swift Testing), run with `swift test`
+Sources/OpenFlowCore/   UI-free logic: prompts, providers, pipeline, dictation state machine (Swift 6)
+Sources/OpenFlow/       AppKit/SwiftUI app: hotkey tap, audio, Accessibility, HUD, windows
+Tests/OpenFlowCoreTests Unit tests (Swift Testing), run with `swift test`
 scripts/bundle.sh       Build, sign, and install the .app
 scripts/eval/eval.py    Live evaluation against real APIs
 ```
 
 ```bash
 swift build && swift test            # build and run the unit tests
-scripts/bundle.sh [debug|release]    # install ~/Applications/myWhisperer.app
+scripts/bundle.sh [debug|release]    # install ~/Applications/OpenFlow.app
 ```
 
 The app binary has a few developer entry points that make UI and prompt work possible without clicking around:
 
 | Command | Purpose |
 |---|---|
-| `myWhisperer --snapshot <screen\|all> <out> [--dark]` | Render any screen offscreen to PNG with sample data (the screenshots in this README come from it) |
-| `myWhisperer --dictate-file clip.wav [--app com.apple.mail] [--before "text"] [--command --selected "text"]` | Run the full pipeline on an audio file and print raw/final text, per-stage latency, and cost |
+| `OpenFlow --snapshot <screen\|all> <out> [--dark]` | Render any screen offscreen to PNG with sample data (the screenshots in this README come from it) |
+| `OpenFlow --dictate-file clip.wav [--app com.apple.mail] [--before "text"] [--command --selected "text"]` | Run the full pipeline on an audio file and print raw/final text, per-stage latency, and cost |
 | `scripts/eval/eval.py [filter…] [--stt m] [--refiner m]` | Generate spoken test clips with macOS voices (including mixed English/German) and run them all. Uses real API calls and costs a few cents |
-| `open "mywhisperer://state"` | Write the running app's state to `~/Library/Application Support/myWhisperer/state.json` |
-| `open "mywhisperer://hud?state=recording"` | Preview any HUD state on screen |
+| `open "openflow://state"` | Write the running app's state to `~/Library/Application Support/OpenFlow/state.json` |
+| `open "openflow://hud?state=recording"` | Preview any HUD state on screen |
 
-The binary lives at `~/Applications/myWhisperer.app/Contents/MacOS/myWhisperer`. Running the installed, signed copy lets it read your saved keys without Keychain prompts. `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` also work.
+The binary lives at `~/Applications/OpenFlow.app/Contents/MacOS/OpenFlow`. Running the installed, signed copy lets it read your saved keys without Keychain prompts. `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` also work.
 
 To log what the hotkey sees:
 
 ```bash
-defaults write com.mywhisperer.app DebugHotkey -bool true
-log stream --predicate 'process == "myWhisperer"'
+defaults write io.github.kunalgehlot.openflow DebugHotkey -bool true
+log stream --predicate 'process == "OpenFlow"'
 ```
 
 Contributions are welcome. Please run `swift test` before opening a pull request. If you change prompts, also run `scripts/eval/eval.py` and include the before/after output.
@@ -244,12 +256,13 @@ Contributions are welcome. Please run `swift test` before opening a pull request
 - [ ] Lower latency: pre-warm connections while you speak, stream transcription
 - [ ] On-device speech recognition (WhisperKit) for offline and private use
 - [ ] Learn dictionary words from your corrections
-- [ ] Signed and notarized downloadable releases
+- [x] Downloadable universal builds
+- [ ] Notarized releases, so macOS opens them without a warning
 
 ## History
 
-- **0.1–0.2 (Electron).** A cross-platform app for macOS, Windows, and Linux, using OpenAI Whisper and GPT.
-- **0.3 (native).** A native Swift rewrite for macOS. It adds real app context (via Accessibility), rewritten cleanup prompts, faster models, a new interface, command mode, snippets, and usage tracking.
+- **0.1–0.2, myWhisperer (Electron).** A cross-platform app for macOS, Windows, and Linux, using OpenAI Whisper and GPT.
+- **0.3, OpenFlow (native).** A native Swift rewrite for macOS. It adds real app context (via Accessibility), rewritten cleanup prompts, faster models, a new interface, command mode, snippets, and usage tracking.
 
 See the [changelog](CHANGELOG.md) for details.
 
@@ -257,4 +270,4 @@ See the [changelog](CHANGELOG.md) for details.
 
 [MIT](LICENSE) © Kunal Gehlot
 
-myWhisperer is an independent open-source project and is not affiliated with Wispr, OpenAI, or Anthropic.
+OpenFlow is an independent open-source project and is not affiliated with Wispr, OpenAI, or Anthropic.

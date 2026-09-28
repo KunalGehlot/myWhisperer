@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.0] - 2026-09-28
 
-myWhisperer is now a native macOS app, rebuilt from scratch in Swift.
+myWhisperer is now **OpenFlow**: a native macOS app, rebuilt from scratch in Swift, with a new name, icon, and design.
 
 ### Added
 
+- **Downloadable universal build** (Apple silicon and Intel) on GitHub Releases.
 - **Hold-to-talk anywhere** with fn (Globe) or a right-hand modifier. Double-tap or Space for hands-free, Esc to cancel.
 - **Real application context** through the Accessibility API: the app, window, website, and the text around your cursor. Password fields are never read.
 - **Rewritten cleanup prompts.** The model acts as a formatter, not an assistant. It removes filler words, applies spoken self-corrections, builds lists and email layout, continues sentences, and keeps mixed-language speech exactly as spoken.
