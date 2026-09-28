@@ -38,7 +38,7 @@ final class Counter: @unchecked Sendable {
     var count: Int { lock.lock(); defer { lock.unlock() }; return value }
 }
 
-let speech = AudioClip(samples: (0..<16_000).map { Int16(8000 * sin(Double($0) * 0.2)) })
+let speech = makeTone()
 let silence = AudioClip(samples: Array(repeating: 0, count: 16_000))
 
 // MARK: - Pipeline

@@ -158,7 +158,7 @@ import Testing
     }
 
     @Test func toneIsVoiced() {
-        let tone = AudioClip(samples: (0..<16_000).map { Int16(8000 * sin(Double($0) * 0.2)) })
+        let tone = makeTone()
         #expect(AudioLevel.voicedSeconds(tone) > 0.9)
     }
 }
