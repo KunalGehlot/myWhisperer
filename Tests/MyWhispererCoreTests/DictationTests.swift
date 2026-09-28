@@ -52,7 +52,8 @@ let silence = AudioClip(samples: Array(repeating: 0, count: 16_000))
         #expect(result.refinerModel == "claude-haiku-4-5")
         #expect(result.usage.map(\.kind) == [.transcription, .cleanup])
         // 1 s at $0.0045/min + 1000 in / 20 out tokens at $1/$5 per MTok.
-        #expect(abs((result.estimatedCost ?? 0) - (0.0045 / 60 + 0.001 + 0.0001)) < 1e-9)
+        let expectedCost: Double = 0.0045 / 60 + 0.001 + 0.0001
+        #expect(approximately(result.estimatedCost, expectedCost))
         #expect(result.skipped == nil)
         #expect(result.timings.transcribeMs != nil)
     }

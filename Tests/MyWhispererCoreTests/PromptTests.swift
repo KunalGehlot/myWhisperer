@@ -172,9 +172,9 @@ import Testing
 
     @Test func pricesKnownModels() {
         let stt = UsageSample(provider: .openAI, kind: .transcription, model: "gpt-transcribe", audioSeconds: 120)
-        #expect(abs((stt.estimatedCost ?? 0) - 0.009) < 1e-9)
+        #expect(approximately(stt.estimatedCost, 0.009))
         let haiku = UsageSample(provider: .anthropic, kind: .cleanup, model: "claude-haiku-4-5", inputTokens: 1_000_000, outputTokens: 100_000)
-        #expect(abs((haiku.estimatedCost ?? 0) - 1.5) < 1e-9)
+        #expect(approximately(haiku.estimatedCost, 1.5))
         #expect(UsageSample(provider: .openAI, kind: .cleanup, model: "mystery").estimatedCost == nil)
     }
 
@@ -190,7 +190,8 @@ import Testing
 
         let all = ledger.total(since: nil, calendar: calendar)
         #expect(all.requests == 3)
-        #expect(abs(all.cost - (0.0045 * 2 + 0.001 + 0.0005)) < 1e-9)
+        let expectedTotal: Double = 0.0045 * 2 + 0.001 + 0.0005
+        #expect(approximately(all.cost, expectedTotal))
 
         let week = ledger.total(for: .openAI, since: now.addingTimeInterval(-86_400 * 7), calendar: calendar)
         #expect(week.requests == 1)
@@ -203,7 +204,7 @@ import Testing
         let daily = ledger.dailyCosts(days: 3, now: now, calendar: calendar)
         #expect(daily.count == 6)
         #expect(daily.last?.provider == .anthropic)
-        #expect(abs((daily.last?.cost ?? 0) - 0.0015) < 1e-9)
+        #expect(approximately(daily.last?.cost, 0.0015))
     }
 
     @Test func formatsDollars() {

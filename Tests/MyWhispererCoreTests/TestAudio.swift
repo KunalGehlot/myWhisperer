@@ -14,3 +14,10 @@ func makeTone(seconds: Double = 1, amplitude: Double = 8_000) -> AudioClip {
     }
     return AudioClip(samples: samples)
 }
+
+/// Floating-point comparison kept out of `#expect`, whose macro expansion makes
+/// inline arithmetic slow to type-check on some compilers.
+func approximately(_ value: Double?, _ expected: Double, tolerance: Double = 1e-9) -> Bool {
+    guard let value else { return false }
+    return abs(value - expected) < tolerance
+}
