@@ -1,271 +1,258 @@
+<div align="center">
+
+<img src="docs/images/hero.png" alt="myWhisperer home window with the dictation pill below it" width="820">
+
 # myWhisperer
 
-**Free, open-source voice-to-text desktop app. Powered by OpenAI Whisper and GPT.**
+**Open-source voice dictation for macOS. Hold a key, talk, and clean, well-formatted text appears in whatever app you're typing in.**
 
-> Turn your voice into perfectly formatted text — in any app, on any platform. A local, privacy-first alternative to subscription-based dictation tools like Wispr Flow, Otter.ai, and Dragon NaturallySpeaking.
+[![CI](https://github.com/KunalGehlot/myWhisperer/actions/workflows/ci.yml/badge.svg)](https://github.com/KunalGehlot/myWhisperer/actions/workflows/ci.yml)
+![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black?logo=apple)
+![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)]()
-[![GitHub Release](https://img.shields.io/github/v/release/KunalGehlot/myWhisperer)](https://github.com/KunalGehlot/myWhisperer/releases/latest)
-[![GitHub Downloads](https://img.shields.io/github/downloads/KunalGehlot/myWhisperer/total)](https://github.com/KunalGehlot/myWhisperer/releases)
+</div>
 
 ---
 
-## About
+myWhisperer is a free, open-source, native menu-bar app: an alternative to subscription dictation tools like Wispr Flow. It runs on your own API keys, so you pay the providers directly (about **$0.002 per dictation**), with no subscription, no account, and no telemetry.
 
-myWhisperer is a **free, open-source desktop application** that turns your voice into text using OpenAI's Whisper API, then polishes it with GPT for clean, publication-ready output. It intelligently detects which application you're typing in and formats the text accordingly — emails sound professional, chat messages stay casual, code comments use the right syntax.
+- **Works everywhere.** Slack, Mail, Notion, your browser, Xcode, VS Code, Cursor, the terminal: text goes wherever your cursor is.
+- **Cleans up as you talk.** It removes "um"s and "you know"s. It applies your corrections ("Tuesday, no wait, Wednesday" becomes "Wednesday"), adds punctuation, and turns spoken lists into real lists.
+- **Knows where you are.** Tone and formatting adapt to the app: casual in chat, properly laid out in email, identifier-safe in code. It also reads the text around your cursor, so it continues your sentence instead of restarting it.
+- **Keeps your languages.** Drop German words (or any language's) into an English sentence and they come out exactly as you said them, never translated.
+- **Command mode.** Select text, hold <kbd>⇧</kbd> + your key, and say "make this friendlier" or "turn this into bullet points".
+- **Never loses a word.** Every dictation lands in a searchable history, and failed ones can be retried from the saved audio.
 
-Bring your own OpenAI API key. **No subscriptions. No recurring fees. No data collection.** Your audio and text stay on your machine — only the OpenAI API calls leave your device.
+<div align="center">
+<img src="docs/images/hud.png" alt="The dictation pill: listening, command mode, working, inserted" width="620">
+</div>
 
-### Why myWhisperer?
+## Contents
 
-- **Free forever** — no subscriptions, pay only for the OpenAI API usage you consume
-- **Private by design** — no telemetry, no analytics, no data collection, no servers
-- **Context-aware** — automatically adapts formatting to your active application
-- **Open source** — MIT licensed, fully auditable, community-driven
+- [Requirements](#requirements)
+- [Install](#install)
+- [First run](#first-run)
+- [Using myWhisperer](#using-mywhisperer)
+- [Models, keys, and cost](#models-keys-and-cost)
+- [Privacy](#privacy)
+- [Troubleshooting](#troubleshooting)
+- [Development](#development)
+- [Roadmap](#roadmap)
 
-## Features
+## Requirements
 
-- **Voice-to-text transcription** — accurate speech recognition in 100+ languages using OpenAI Whisper
-- **Context-aware smart formatting** — detects the active application (email, chat, code editor, notes, terminal, etc.) and adapts output formatting automatically
-- **GPT formatting level slider** — from 0% (raw transcription) to 100% (fully formatted with context-aware rewriting), with Light, Moderate, and Full tiers
-- **Side-by-side transcription view** — see both the original raw transcription and the GPT-formatted version
-- **Two recording modes** — Toggle (press to start/stop) and Push-to-Talk (hold to record, release to stop)
-- **Customizable global hotkey** — default `Control+Space`, configurable to any key combination
-- **System tray integration** — runs quietly in the background with minimize-to-tray
-- **Light/Dark/System theme support** — matches your OS preference or set manually
-- **Personal dictionary** — add custom terminology, names, and jargon for more accurate transcriptions
-- **Auto-copy and auto-paste** — transcribed text is automatically copied to clipboard and pasted into the active application
-- **Transcription history** — browse, search, and reuse past transcriptions
-- **Cross-platform** — macOS, Windows, and Linux
-- **Secure** — API key encryption via OS keychain (macOS Keychain, Windows DPAPI), context isolation enabled, no external data storage
+| | |
+|---|---|
+| **macOS** | 14 Sonoma or later (Apple silicon or Intel) |
+| **Xcode** | 16 or later, the full Xcode app from the App Store, not just the Command Line Tools |
+| **API keys** | [OpenAI](https://platform.openai.com/api-keys) (required, speech recognition) and [Anthropic](https://console.anthropic.com/settings/keys) (recommended, cleanup) |
 
-## Installation
+## Install
 
-Download the latest release from [**GitHub Releases**](https://github.com/KunalGehlot/myWhisperer/releases/latest):
-
-| Platform | Format |
-|----------|--------|
-| macOS | `.dmg` or `.zip` |
-| Windows | NSIS installer (`.exe`) or portable `.exe` |
-| Linux | `.AppImage` or `.deb` |
-
-**Requires an [OpenAI API key](https://platform.openai.com/api-keys)** (pay-as-you-go, typically a few cents per transcription).
-
-### macOS: Bypassing Gatekeeper
-
-Since myWhisperer is not signed with an Apple Developer certificate, macOS will block it on first launch. To open it:
-
-1. **Right-click** (or Control-click) the app in Finder
-2. Select **Open** from the context menu
-3. Click **Open** in the confirmation dialog
-
-macOS will remember your choice and allow the app to run normally afterward.
-
-Alternatively, you can remove the quarantine attribute from the terminal:
+The native app is built from source for now; signed downloads are on the roadmap.
 
 ```bash
-xattr -cr /Applications/myWhisperer.app
-```
-
-### macOS: Self-Signing (Optional)
-
-If you prefer to self-sign the app to avoid Gatekeeper warnings entirely:
-
-```bash
-# Self-sign the application
-codesign --force --deep --sign - /Applications/myWhisperer.app
-
-# Verify the signature
-codesign --verify --verbose /Applications/myWhisperer.app
-```
-
-> **Note:** Self-signing removes the "unidentified developer" warning but does not replace a proper Apple Developer signature. The app is fully functional without signing.
-
-## Getting Started
-
-1. Download and install myWhisperer for your platform.
-2. Launch the app and open **Settings**.
-3. Enter your OpenAI API key in the API Configuration section.
-4. Choose your preferred recording mode (Toggle or Push-to-Talk) and hotkey.
-5. Press the hotkey (default: `Control+Space`) to start recording. Speak naturally.
-6. Your transcription appears with both the raw and formatted versions, and is automatically copied/pasted.
-
-## Development Setup
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) 20+
-- [npm](https://www.npmjs.com/)
-- An [OpenAI API key](https://platform.openai.com/api-keys) (for runtime)
-
-### Getting Started
-
-```bash
-# Clone the repository
 git clone https://github.com/KunalGehlot/myWhisperer.git
 cd myWhisperer
-
-# Install dependencies
-npm install
-
-# Start in development mode (hot reload)
-npm run dev
+scripts/bundle.sh                       # builds, signs, installs ~/Applications/myWhisperer.app
+open ~/Applications/myWhisperer.app
 ```
 
-### Build and Package
+> [!NOTE]
+> **On Windows or Linux?** Versions up to 0.2.3 were a cross-platform Electron app. Its installers are still on the [v0.2.3 release](https://github.com/KunalGehlot/myWhisperer/releases/tag/v0.2.3). From 0.3.0, myWhisperer is a native macOS app.
+
+A waveform icon appears in your menu bar and the welcome guide opens.
+
+> [!TIP]
+> **Sign with a free Apple Development certificate** so macOS keeps your permission grants when you rebuild. Without one, the app is signed ad hoc and macOS asks for Accessibility again after every build.
+>
+> 1. Open Xcode → **Settings → Accounts** and add your Apple ID. A free account works.
+> 2. Select your team → **Manage Certificates… → + → Apple Development**.
+> 3. Check it shows up with `security find-identity -v -p codesigning`. If it says *0 valid identities*, install Apple's [WWDR G3 intermediate certificate](https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer) by double-clicking it.
+>
+> `scripts/bundle.sh` picks the certificate up automatically. To force one, set `SIGN_IDENTITY`.
+
+<details>
+<summary>First time using Xcode on this Mac?</summary>
+
+Accept the license once, or `swift` refuses to run:
 
 ```bash
-# Build for production
-npm run build
-
-# Package for your current platform
-npm run dist
-
-# Package for a specific platform
-npm run dist:mac
-npm run dist:win
-npm run dist:linux
+sudo xcodebuild -license accept
 ```
 
-Built packages are output to the `release/` directory.
+</details>
 
-### Quality Checks
+## First run
+
+The welcome guide walks through everything in about a minute:
+
+| | |
+|---|---|
+| <img src="docs/images/onboarding.png" alt="Welcome screen" width="420"> | <img src="docs/images/permissions.png" alt="Permissions step with live status" width="420"> |
+
+1. **Permissions.** myWhisperer needs two. Their status updates live as you grant them.
+   - **Microphone**, to hear you while you hold the key.
+   - **Accessibility**, to detect the key, see which app you're in, and paste text.
+2. **API keys.** Paste your OpenAI and Anthropic keys. Each one is checked with a real request and stored in your macOS Keychain.
+3. **Microphone check.** Pick an input and watch the meter move.
+4. **Hotkey.** <kbd>fn</kbd> (Globe) by default, or right <kbd>⌥</kbd>, right <kbd>⌘</kbd>, or right <kbd>⌃</kbd>.
+5. **Try it** in a practice box.
+
+> [!IMPORTANT]
+> If you use <kbd>fn</kbd>, set **System Settings → Keyboard → "Press 🌐 key to" → Do Nothing**. Otherwise macOS opens the emoji picker or switches keyboard layout every time you dictate.
+
+## Using myWhisperer
+
+| Shortcut | What it does |
+|---|---|
+| Hold <kbd>fn</kbd> | Talk while holding; text is inserted when you let go |
+| Double-tap <kbd>fn</kbd> | Hands-free: keeps listening until you press <kbd>fn</kbd> again |
+| <kbd>Space</kbd> while holding <kbd>fn</kbd> | Also switches to hands-free |
+| <kbd>esc</kbd> | Cancel while listening or processing |
+| <kbd>⇧</kbd> + <kbd>fn</kbd> | **Command mode**: select text first, then say how to change it |
+| <kbd>⌃</kbd> <kbd>⌘</kbd> <kbd>V</kbd> | Paste your last dictation again |
+
+A small pill at the bottom of the screen shows what's happening. It never takes focus, so your text always lands where you were typing.
+
+**Styles.** myWhisperer sorts apps into *personal messages*, *work messages*, *email*, *code*, and *everything else*. Each gets a tone (formal, casual, very casual) and optional instructions of your own, such as "sign emails with 'Best, Alex'". Per-app rules under **Settings → Apps** can switch cleanup off, insert raw text, or turn dictation off entirely for a given app.
+
+**Dictionary and snippets.** Add names, jargon, and foreign words to the **Dictionary** so they're always spelled right. **Snippets** expand a spoken cue into stored text: say "my calendar link" and get your full URL. Snippets are matched exactly, never guessed by the AI.
+
+| | |
+|---|---|
+| <img src="docs/images/styles.png" alt="Styles pane" width="420"> | <img src="docs/images/history.png" alt="History pane" width="420"> |
+
+## Models, keys, and cost
+
+Each dictation makes two requests:
+
+```mermaid
+flowchart LR
+    A[Hold key] --> B[Record 16 kHz audio]
+    A --> C[Read app and text around cursor]
+    B --> D[Speech to text<br/>OpenAI GPT Transcribe]
+    D --> E[Cleanup<br/>Claude Haiku 4.5]
+    C --> E
+    E --> F[Snippets, spacing]
+    F --> G[Paste at cursor]
+```
+
+| Step | Default | Alternatives (Settings → Models & Keys) |
+|---|---|---|
+| Speech to text | `gpt-transcribe` | `whisper-1`, `gpt-4o-transcribe`, `gpt-4o-mini-transcribe` |
+| Cleanup | `claude-haiku-4-5` | `claude-sonnet-5`, `claude-opus-5`, OpenAI `gpt-6-luna`, or off (raw text) |
+
+- **Languages.** Tell myWhisperer every language you speak, even just a few words of one. The default is English + German. Recognition is steered by these languages and by your dictionary, and nothing is ever translated.
+- **Speed.** Text usually appears about **1.5–1.8 s** after you release the key. If cleanup takes longer than the configured wait, the raw transcript is inserted instead, so you're never stuck.
+- **Cost.** At list prices a typical 7-second dictation costs about $0.002. **Settings → Usage & Costs** tracks estimated spend per provider and model, with a 30-day chart.
+  - These are estimates. Your provider dashboards show exact billing.
+  - Prices were last checked on 28 Sep 2026 and are kept in [`Usage.swift`](Sources/MyWhispererCore/Models/Usage.swift).
+
+<div align="center">
+<img src="docs/images/usage.png" alt="Usage and costs pane" width="640">
+</div>
+
+## Privacy
+
+- **Audio** is recorded only while you hold the key (or in hands-free mode), and is sent to OpenAI for transcription.
+- **Text** is sent to your cleanup provider: the transcript, the app's name and window title, the website's domain, and up to about 1,500 characters before and 300 after your cursor (plus any selection). Password fields are never read. Turn off **Privacy → Use the text around your cursor** to send only the transcript.
+- **API keys** live in your macOS Keychain.
+- **History, dictionary, snippets, and usage** stay on your Mac in `~/Library/Application Support/myWhisperer`. Set a retention period or delete everything from **Privacy & Permissions**.
+- No analytics and no telemetry. Nothing is sent anywhere except to the two providers you configured.
+
+## Troubleshooting
+
+<details>
+<summary><b>Holding fn opens the emoji picker or switches input source</b></summary>
+
+System Settings → Keyboard → **Press 🌐 key to** → **Do Nothing**.
+</details>
+
+<details>
+<summary><b>Double-tapping fn also starts Apple's Dictation</b></summary>
+
+System Settings → Keyboard → Dictation → **Shortcut**: choose anything other than "Press 🌐 twice", or turn Dictation off.
+</details>
+
+<details>
+<summary><b>The hotkey doesn't do anything</b></summary>
+
+- Check that the menu-bar icon doesn't show a warning badge, and look at **Settings → Privacy & Permissions**.
+- After granting Accessibility, macOS sometimes needs the app restarted before it passes keys through. Use the **Relaunch** button there.
+- If you rebuilt without a signing certificate, reset the stale grant and approve it again:
+  `tccutil reset Accessibility com.mywhisperer.app`.
+- Apps that turn on **Secure Keyboard Entry**, such as Terminal (Terminal → Secure Keyboard Entry) and some password managers, block all global hotkeys while they're in front.
+</details>
+
+<details>
+<summary><b>Nothing gets typed</b></summary>
+
+If no text field is focused, myWhisperer puts the text on your clipboard instead and says so; press <kbd>⌘</kbd><kbd>V</kbd> where you want it. Every dictation is also saved in **History**, and <kbd>⌃</kbd><kbd>⌘</kbd><kbd>V</kbd> pastes the last one again, so nothing is lost.
+</details>
+
+<details>
+<summary><b>The first word gets cut off, or quality is poor with AirPods</b></summary>
+
+Bluetooth headsets switch to a low-quality mode while their microphone is in use, and take longer to start. Choose your Mac's built-in microphone under **Settings → Microphone** (or from the menu-bar icon).
+</details>
+
+## Development
+
+```
+Sources/MyWhispererCore/   UI-free logic: prompts, providers, pipeline, dictation state machine (Swift 6)
+Sources/MyWhisperer/       AppKit/SwiftUI app: hotkey tap, audio, Accessibility, HUD, windows
+Tests/MyWhispererCoreTests Unit tests (Swift Testing), run with `swift test`
+scripts/bundle.sh       Build, sign, and install the .app
+scripts/eval/eval.py    Live evaluation against real APIs
+```
 
 ```bash
-# TypeScript type checking
-npm run typecheck
-
-# Run tests
-npm test
+swift build && swift test            # build and run the unit tests
+scripts/bundle.sh [debug|release]    # install ~/Applications/myWhisperer.app
 ```
 
-## Configuration
+The app binary has a few developer entry points that make UI and prompt work possible without clicking around:
 
-All settings are accessible from the Settings panel inside the app:
+| Command | Purpose |
+|---|---|
+| `myWhisperer --snapshot <screen\|all> <out> [--dark]` | Render any screen offscreen to PNG with sample data (the screenshots in this README come from it) |
+| `myWhisperer --dictate-file clip.wav [--app com.apple.mail] [--before "text"] [--command --selected "text"]` | Run the full pipeline on an audio file and print raw/final text, per-stage latency, and cost |
+| `scripts/eval/eval.py [filter…] [--stt m] [--refiner m]` | Generate spoken test clips with macOS voices (including mixed English/German) and run them all. Uses real API calls and costs a few cents |
+| `open "mywhisperer://state"` | Write the running app's state to `~/Library/Application Support/myWhisperer/state.json` |
+| `open "mywhisperer://hud?state=recording"` | Preview any HUD state on screen |
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| **API Key** | Your OpenAI API key | -- |
-| **Whisper Model** | Model used for transcription | `whisper-1` |
-| **GPT Model** | Model used for text formatting | `gpt-4.1` |
-| **Formatting Level** | GPT formatting intensity (0-100% slider) | 70% |
-| **Custom Format Prompt** | Override the level-based formatting with a custom prompt | -- |
-| **Recording Mode** | Toggle or Push-to-Talk | Toggle |
-| **Hotkey** | Global keyboard shortcut (customizable) | `Control+Space` |
-| **Language** | Transcription language (20+ presets, auto-detect default) | Auto-detect |
-| **Theme** | Light, Dark, or System | System |
-| **Audio Input** | Microphone device | System default |
-| **Auto-copy** | Copy text to clipboard after transcription | Enabled |
-| **Auto-paste** | Paste text into active app after transcription | Enabled |
-| **Personal Dictionary** | Custom words and phrases for better accuracy | -- |
+The binary lives at `~/Applications/myWhisperer.app/Contents/MacOS/myWhisperer`. Running the installed, signed copy lets it read your saved keys without Keychain prompts. `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` also work.
 
-### Formatting Levels
+To log what the hotkey sees:
 
-The formatting slider controls how aggressively GPT processes your transcription:
-
-| Level | Behavior |
-|-------|----------|
-| **0%** | No formatting -- raw transcription output |
-| **1-30%** | Light -- capitalization, filler word removal, basic punctuation |
-| **31-70%** | Moderate -- grammar, punctuation, light sentence flow improvements |
-| **71-100%** | Full -- context-aware rewriting based on the active application (email, chat, code editor, etc.) |
-
-Setting a **custom format prompt** overrides the level-based formatting entirely.
-
-## Architecture
-
-myWhisperer follows standard Electron architecture with a clear separation between processes:
-
-```
-+-------------------+       IPC        +--------------------+
-|  Main Process     | <--------------> |  Renderer Process  |
-|  (Node.js)        |                  |  (React + Vite)    |
-|                   |                  |                    |
-|  - Audio capture  |                  |  - UI components   |
-|  - Whisper API    |                  |  - Settings panel  |
-|  - GPT API        |                  |  - History view    |
-|  - Context detect |                  |  - Recording state |
-|  - Clipboard      |                  |                    |
-|  - System tray    |                  |                    |
-|  - Global hotkeys |                  |                    |
-|  - Settings store |                  |                    |
-+-------------------+                  +--------------------+
-         |
-         v
-  +--------------+
-  |  OpenAI API  |
-  |  - Whisper   |
-  |  - GPT       |
-  +--------------+
+```bash
+defaults write com.mywhisperer.app DebugHotkey -bool true
+log stream --predicate 'process == "myWhisperer"'
 ```
 
-- **Main process** handles all system-level operations: audio recording, API calls to OpenAI, context detection, clipboard management, system tray, and global hotkey registration.
-- **Renderer process** is a React application that provides the user interface, styled with Tailwind CSS.
-- **IPC bridge** connects the two processes via a secure preload script with context isolation enabled.
+Contributions are welcome. Please run `swift test` before opening a pull request. If you change prompts, also run `scripts/eval/eval.py` and include the before/after output.
 
-### Tech Stack
+## Roadmap
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | [Electron](https://www.electronjs.org/) 35 |
-| Frontend | [React](https://react.dev/) 19 |
-| Language | [TypeScript](https://www.typescriptlang.org/) 5.7 |
-| Styling | [Tailwind CSS](https://tailwindcss.com/) 3.4 |
-| Bundler | [Vite](https://vite.dev/) 6 |
-| AI | [OpenAI SDK](https://github.com/openai/openai-node) 4.x |
-| Storage | [electron-store](https://github.com/sindresorhus/electron-store) 8 |
-| Packaging | [electron-builder](https://www.electron.build/) 26 |
+- [x] Hold-to-talk, hands-free, and command mode
+- [x] Context-aware cleanup with per-app styles, dictionary, and snippets
+- [x] History with retry, usage and cost tracking
+- [ ] Lower latency: pre-warm connections while you speak, stream transcription
+- [ ] On-device speech recognition (WhisperKit) for offline and private use
+- [ ] Learn dictionary words from your corrections
+- [ ] Signed and notarized downloadable releases
 
-### Project Structure
+## History
 
-```
-myWhisperer/
-  src/
-    main/                     # Electron main process
-      main.ts                 # App lifecycle, IPC handlers
-      gpt-service.ts          # GPT formatting with level-based prompts
-      whisper-service.ts      # Whisper API transcription
-      context-detector.ts     # Active window detection (macOS/Win/Linux)
-      shortcut-manager.ts     # Global shortcuts (toggle + push-to-talk)
-      clipboard-manager.ts    # Clipboard and auto-paste
-      settings-store.ts       # Persistent settings with electron-store
-      tray-manager.ts         # System tray icon and menu
-    preload/
-      preload.ts              # Secure IPC bridge (context isolation)
-    renderer/
-      components/             # React UI components
-      hooks/                  # React hooks
-      styles/                 # Global CSS and Tailwind setup
-      types/                  # TypeScript type definitions
-      main.tsx                # React entry point
-  resources/                  # App icons and platform-specific assets
-  .github/workflows/          # CI/CD pipelines
-  index.html                  # HTML entry point
-  package.json
-  tsconfig.json               # TypeScript config (renderer)
-  tsconfig.main.json          # TypeScript config (main process)
-  vite.config.ts              # Vite bundler config
-  tailwind.config.js          # Tailwind CSS config
-```
+- **0.1–0.2 (Electron).** A cross-platform app for macOS, Windows, and Linux, using OpenAI Whisper and GPT.
+- **0.3 (native).** A native Swift rewrite for macOS. It adds real app context (via Accessibility), rewritten cleanup prompts, faster models, a new interface, command mode, snippets, and usage tracking.
 
-## Contributing
-
-Contributions are welcome.
-
-- Development happens on the `main` branch.
-- Pushing to the `broad` branch triggers the auto-release pipeline, which builds and publishes to GitHub Releases for all platforms.
-- Before submitting a PR, run `npm run typecheck` and `npm test` to ensure everything passes.
+See the [changelog](CHANGELOG.md) for details.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+[MIT](LICENSE) © Kunal Gehlot
 
-## Acknowledgments
-
-- [OpenAI](https://openai.com/) for the Whisper and GPT APIs
-- Inspired by [Wispr Flow](https://wisprflow.ai)
-
----
-
-<sub>**myWhisperer** is a free, open-source voice-to-text application, speech-to-text transcription tool, and AI-powered dictation software for macOS, Windows, and Linux. It serves as a free alternative to Wispr Flow, Otter.ai, Dragon NaturallySpeaking, and other paid dictation services. Keywords: free transcription app, voice to text, speech to text, dictation software, AI transcription, whisper transcription, open source dictation, desktop transcription tool, offline voice recognition, GPT text formatting.</sub>
+myWhisperer is an independent open-source project and is not affiliated with Wispr, OpenAI, or Anthropic.

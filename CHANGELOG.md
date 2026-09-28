@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-09-28
+
+myWhisperer is now a native macOS app, rebuilt from scratch in Swift.
+
+### Added
+
+- **Hold-to-talk anywhere** with fn (Globe) or a right-hand modifier. Double-tap or Space for hands-free, Esc to cancel.
+- **Real application context** through the Accessibility API: the app, window, website, and the text around your cursor. Password fields are never read.
+- **Rewritten cleanup prompts.** The model acts as a formatter, not an assistant. It removes filler words, applies spoken self-corrections, builds lists and email layout, continues sentences, and keeps mixed-language speech exactly as spoken.
+- **Command mode**: select text, hold Shift with the hotkey, and say how to change it.
+- **Per-category styles**, per-app rules, dictionary terms passed to both recognition and cleanup, and deterministic snippets.
+- **Floating status pill** that never steals focus, plus a menu bar item and a paste-last shortcut (Ctrl+Cmd+V).
+- **Onboarding** with live permission status, API keys validated and stored in the Keychain, a microphone test, and a practice field.
+- **History** with search and retry of failed dictations from saved audio.
+- **Usage and cost tracking** per provider and model, with a 30-day chart.
+- Developer tooling: offscreen UI snapshots, a pipeline CLI, and a live evaluation script.
+
+### Changed
+
+- Speech recognition defaults to `gpt-transcribe` with language and keyword hints; cleanup defaults to `claude-haiku-4-5` (OpenAI models remain available).
+- About 1.5–1.8 s from releasing the key to inserted text.
+
+### Removed
+
+- The Electron app, including Windows and Linux builds. The last cross-platform release is [0.2.3](https://github.com/KunalGehlot/myWhisperer/releases/tag/v0.2.3).
+
 ## [0.2.3] - 2026-03-01
 
 ### Fixed
